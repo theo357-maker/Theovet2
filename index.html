@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TheoVêt - Gestion de Commerce</title>
+  <title>hybrilink - Gestion de Commerce</title>
   
   <!-- PWA Meta Tags -->
   <meta name="application-name" content="TheoVêt">
@@ -1673,6 +1673,11 @@
       color: var(--danger-dark);
       border: 1px solid var(--danger);
     }
+/* Ajoutez ce CSS à la fin de votre section style */
+.btn-danger[onclick="logout()"] {
+    display: inline-flex !important;
+    visibility: visible !important;
+}
   </style>
 </head>
 
@@ -1682,7 +1687,7 @@
     <div class="auth-form">
       <div class="auth-logo">
         <i class="fas fa-tshirt"></i>
-        <h2>TheoVêt</h2>
+        <h2>HybriLink</h2>
       </div>
       <div class="form-group">
         <label for="loginEmail"><i class="fas fa-envelope"></i> Email</label>
@@ -1777,7 +1782,7 @@
         </button>
       </div>
       
-      <h1><i class="fas fa-tshirt"></i> TheoVêt</h1>
+      <h1><i class="fas fa-tshirt"></i> hybrilink</h1>
       <p class="tagline">Solution complète de gestion de commerce de vêtements</p>
     </header>
     
@@ -2520,7 +2525,7 @@
               </div>
               <div class="step">
                 <span class="step-number">4</span>
-                <span class="step-text">Entrez le code marchand: <strong>THEOVET</strong></span>
+                <span class="step-text">Entrez le code marchand: <strong>hybrilink</strong></span>
               </div>
               <div class="step">
                 <span class="step-number">5</span>
@@ -2784,6 +2789,12 @@ const firebaseConfig = {
   messagingSenderId: "1007742031625",
   appId: "1:1007742031625:web:3749c2ab333e7772c1a5d8"
 };
+
+// Configuration Cloudinary
+    const CLOUDINARY_CONFIG = {
+      cloudName: 'diwn8sxtn',
+      uploadPreset: 'cs_lacolombe'
+    };
 
 
 
@@ -3103,6 +3114,8 @@ function setupOnlineOfflineHandler() {
     });
 }
 
+
+
 function setupModalCloseHandlers() {
     // Fermer les modals en cliquant à l'extérieur
     window.addEventListener('click', (e) => {
@@ -3182,6 +3195,8 @@ function removeImage() {
     `;
     document.getElementById('uploadImage').value = '';
 }
+
+
 
 // ==================== AUTHENTIFICATION ====================
 function showLogin() {
@@ -3457,6 +3472,42 @@ async function updateUserLoginInfo(uid) {
     }
 }
 
+   // Fonction upload Cloudinary
+    async function uploadToCloudinary(file, folder = 'cs-lacolombe') {
+      if (!file) return null;
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
+            formData.append('folder', folder);
+            
+            const response = await fetch(
+              `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
+              { 
+                method: 'POST', 
+                body: formData 
+              }
+            );
+            
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            resolve(data.secure_url);
+          } catch (error) {
+            reject(error);
+          }
+        };
+        reader.onerror = () => reject(new Error('Erreur de lecture du fichier'));
+        reader.readAsDataURL(file);
+      });
+    }
+
 function setupUserInterface() {
     document.getElementById('userName').textContent = userData.name;
     document.getElementById('userRole').textContent = userRole;
@@ -3554,6 +3605,8 @@ function updateUIWithPermissions() {
     });
 }
 
+
+
 function hasPermission(permission) {
     return userPermissions.includes(permission);
 }
@@ -3625,27 +3678,143 @@ async function loadArticles() {
 
 async function loadVentes() {
     try {
+        // Créer la date d'aujourd'hui (début de journée)
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         
+        // Créer la date de fin d'aujourd'hui
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+        
+        // Formater la date d'aujourd'hui pour la comparaison avec les ventes
+        const todayFormatted = today.toLocaleDateString('fr-FR');
+        
+        // Option 1: Si vos ventes utilisent un timestamp Firestore
         const ventesSnapshot = await db.collection('ventes')
             .where('timestamp', '>=', todayStart)
+            .where('timestamp', '<=', todayEnd)
             .orderBy('timestamp', 'desc')
             .get();
-        ventes = ventesSnapshot.docs.map(doc => ({ 
-            id: doc.id, 
-            ...doc.data(),
-            quantite: Number(doc.data().quantite) || 0,
-            prixUnitaire: Number(doc.data().prixUnitaire) || 0,
-            total: Number(doc.data().total) || 0,
-            montantVerse: Number(doc.data().montantVerse) || 0,
-            resteAPayer: Number(doc.data().resteAPayer) || 0
-        }));
+        
+        // Option 2: Si vos ventes utilisent une chaîne de date
+        // Vous devrez d'abord charger toutes les ventes et filtrer côté client
+        /*
+        const ventesSnapshot = await db.collection('ventes')
+            .orderBy('timestamp', 'desc')
+            .get();
+        */
+        
+        ventes = [];
+        
+        ventesSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            
+            // Vérifier si la vente est d'aujourd'hui
+            let isToday = false;
+            
+            // Méthode 1: Vérifier via le timestamp
+            if (data.timestamp) {
+                const ventedate = data.timestamp.toDate ? 
+                                 data.timestamp.toDate() : 
+                                 new Date(data.timestamp);
+                isToday = ventedate >= todayStart && ventedate <= todayEnd;
+            }
+            
+            // Méthode 2: Vérifier via le champ date (si c'est une chaîne)
+            if (data.date) {
+                // Convertir "15/01/2024" en objet Date
+                const dateParts = data.date.split('/');
+                if (dateParts.length === 3) {
+                    const ventedate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+                    isToday = ventedate.toLocaleDateString('fr-FR') === todayFormatted;
+                }
+            }
+            
+            if (isToday) {
+                ventes.push({ 
+                    id: doc.id, 
+                    ...data,
+                    quantite: Number(data.quantite) || 0,
+                    prixUnitaire: Number(data.prixUnitaire) || 0,
+                    total: Number(data.total) || 0,
+                    montantVerse: Number(data.montantVerse) || 0,
+                    resteAPayer: Number(data.resteAPayer) || 0
+                });
+            }
+        });
+        
+        console.log(`📊 ${ventes.length} ventes chargées pour aujourd'hui (${todayFormatted})`);
+        
     } catch (error) {
         console.error('Erreur chargement ventes:', error);
-        throw error;
+        // En cas d'erreur, essayer une méthode alternative
+        await loadVentesFallback();
     }
 }
+
+// Méthode de secours si la requête Firestore échoue
+async function loadVentesFallback() {
+    try {
+        const ventesSnapshot = await db.collection('ventes')
+            .orderBy('timestamp', 'desc')
+            .limit(100)
+            .get();
+        
+        const todayFormatted = today.toLocaleDateString('fr-FR');
+        
+        ventes = ventesSnapshot.docs
+            .map(doc => ({ 
+                id: doc.id, 
+                ...doc.data(),
+                quantite: Number(doc.data().quantite) || 0,
+                prixUnitaire: Number(doc.data().prixUnitaire) || 0,
+                total: Number(doc.data().total) || 0,
+                montantVerse: Number(doc.data().montantVerse) || 0,
+                resteAPayer: Number(doc.data().resteAPayer) || 0
+            }))
+            .filter(vente => {
+                // Filtrer pour garder uniquement les ventes d'aujourd'hui
+                if (vente.date) {
+                    return vente.date === todayFormatted;
+                }
+                return false;
+            });
+            
+        console.log(`📊 ${ventes.length} ventes chargées (méthode fallback)`);
+        
+    } catch (error) {
+        console.error('Erreur méthode fallback:', error);
+        ventes = [];
+    }
+}
+
+
+async function debugVentesData() {
+    try {
+        console.log('🔍 Debug des données de ventes:');
+        
+        const snapshot = await db.collection('ventes')
+            .limit(5)
+            .get();
+            
+        snapshot.docs.forEach((doc, index) => {
+            const data = doc.data();
+            console.log(`Vente ${index + 1}:`, {
+                id: doc.id,
+                date: data.date,
+                timestamp: data.timestamp,
+                nom: data.nom,
+                total: data.total
+            });
+        });
+        
+    } catch (error) {
+        console.error('Erreur debug:', error);
+    }
+}
+
+// Appelez cette fonction dans la console pour voir la structure de vos données
+// debugVentesData();
 
 async function loadDepenses() {
     try {
@@ -3755,18 +3924,30 @@ function updateInterface() {
 function updateDashboard() {
     // Calcul de la valeur du stock
     const valeurStock = articles.reduce((total, article) => {
-        const prix = article.prixVente;
-        return total + (prix * article.quantite);
+        const prix = article.prixVente || 0;
+        const quantite = article.quantite || 0;
+        return total + (prix * quantite);
     }, 0);
     
     // Calcul du total des articles
-    const totalArticles = articles.reduce((total, article) => total + article.quantite, 0);
+    const totalArticles = articles.reduce((total, article) => {
+        return total + (article.quantite || 0);
+    }, 0);
     
     // Calcul des ventes d'aujourd'hui
-    const ventesAujourdhui = ventes.reduce((total, vente) => total + vente.montantVerse, 0);
+    const ventesAujourdhui = ventes.reduce((total, vente) => {
+        return total + (vente.montantVerse || 0);
+    }, 0);
     
     // Calcul du nombre de commandes en attente
     const pendingOrders = orders.filter(order => order.status === 'pending').length;
+    
+    console.log('📊 Dashboard calculs:', {
+        valeurStock,
+        totalArticles,
+        ventesAujourdhui,
+        pendingOrders
+    });
 
     // Mise à jour des éléments du tableau de bord
     document.getElementById('valeurStock').textContent = formatCurrency(valeurStock);
@@ -6558,4 +6739,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   </script>
 </body>
-</html>
+</html> 
