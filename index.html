@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -30,6 +30,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+<!-- Dans la section <head>, ajoutez cette ligne après les autres scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -998,6 +1001,45 @@
       overflow: hidden;
       margin: 10px 0;
     }
+
+
+/* Styles pour les boutons d'export */
+.export-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.export-buttons .btn {
+    flex: 1;
+    min-width: 180px;
+    max-width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 15px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.export-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .export-buttons {
+        flex-direction: column;
+    }
+    
+    .export-buttons .btn {
+        max-width: 100%;
+    }
+}
     
     .progress-fill {
       height: 100%;
@@ -2180,6 +2222,8 @@
           <button class="btn btn-danger" onclick="reinitialiserApplication()">
             <i class="fas fa-trash-alt"></i> Réinitialiser l'application
           </button>
+
+
         </div>
       </div>
     </div>
@@ -2288,6 +2332,16 @@
             <button class="btn btn-warning" onclick="exporterArchivesPDF()">
               <i class="fas fa-file-pdf"></i> Exporter les dépenses
             </button>
+ <!-- AJOUTEZ CES BOUTONS -->
+
+  <button class="btn btn-info" onclick="exporterStockCSV()">
+    <i class="fas fa-file-csv"></i> Exporter en CSV
+  </button>
+
+  <button class="btn btn-danger" onclick="reinitialiserApplication()">
+    <i class="fas fa-trash-alt"></i> Réinitialiser l'application
+  </button>
+
           </div>
         </div>
       </div>
@@ -2341,6 +2395,8 @@
           <button class="btn btn-warning" onclick="exporterArchivesPDF()">
             <i class="fas fa-file-pdf"></i> Exporter les archives en PDF
           </button>
+
+
         </div>
       </div>
     </div>
@@ -4700,6 +4756,717 @@ async function validerPaiement() {
         showAlert('❌ Erreur lors de l\'enregistrement de la vente', 'danger');
     } finally {
         showLoading(false);
+    }
+}
+
+
+// ==================== EXPORT STOCK AVANCÉ ====================
+
+function exporterStockExcel() {
+    if (articles.length === 0) {
+        showAlert("❌ Aucun article en stock à exporter", "warning");
+        return;
+    }
+
+    try {
+        showLoading(true, 'Génération du fichier Excel...');
+        
+        // Préparer les données
+        const data = articles.map((article, index) => ({
+            'N°': index + 1,
+            'Article': article.nom,
+            'Type': article.type,
+            'Description': article.description || '',
+            'Prix d\'Achat (FC)': article.prixAchat,
+            'Prix de Vente (FC)': article.prixVente,
+            'Quantité': article.quantite,
+            'Valeur Stock (FC)': article.prixVente * article.quantite,
+            'Marge (FC)': article.prixVente - article.prixAchat,
+            'Marge (%)': article.prixAchat > 0 ? 
+                (((article.prixVente - article.prixAchat) / article.prixAchat) * 100).toFixed(2) + '%' : 'N/A',
+            'Statut': article.quantite < 5 ? 'CRITIQUE' : 
+                     article.quantite < 15 ? 'FAIBLE' : 'NORMAL',
+            'Dernière Mise à jour': article.lastUpdated ? 
+                article.lastUpdated.toDate().toLocaleDateString('fr-FR') : 'N/A'
+        }));
+
+        // Calculer les totaux
+        const totalValeur = articles.reduce((sum, article) => 
+            sum + (article.prixVente * article.quantite), 0);
+        const totalQuantite = articles.reduce((sum, article) => 
+            sum + article.quantite, 0);
+        const totalInvestissement = articles.reduce((sum, article) => 
+            sum + (article.prixAchat * article.quantite), 0);
+        const beneficePotentiel = totalValeur - totalInvestissement;
+
+        // Créer le workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Feuille de données principales
+        const ws_data = [
+            // En-tête
+            ['RAPPORT DU STOCK - TheoVêt'],
+            [`Date de génération: ${new Date().toLocaleString('fr-FR')}`],
+            [`Généré par: ${userData.name} (${userRole})`],
+            [], // Ligne vide
+            // En-têtes du tableau
+            Object.keys(data[0])
+        ];
+
+        // Ajouter les données
+        data.forEach(row => {
+            ws_data.push(Object.values(row));
+        });
+
+        // Ajouter les totaux
+        ws_data.push([]); // Ligne vide
+        ws_data.push(['TOTAUX', '', '', '', '', '', '', '', '', '', '', '']);
+        ws_data.push([
+            'Total Articles:', articles.length,
+            'Total Quantité:', totalQuantite,
+            'Valeur Totale:', formatCurrency(totalValeur),
+            'Investissement:', formatCurrency(totalInvestissement),
+            'Bénéfice Potentiel:', formatCurrency(beneficePotentiel),
+            'Moyenne Marge:', article.prixAchat > 0 ? 
+                ((beneficePotentiel / totalInvestissement) * 100).toFixed(2) + '%' : 'N/A'
+        ]);
+
+        // Créer la feuille de calcul
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        
+        // Ajuster la largeur des colonnes
+        const colWidths = [
+            { wch: 5 },   // N°
+            { wch: 30 },  // Article
+            { wch: 15 },  // Type
+            { wch: 40 },  // Description
+            { wch: 15 },  // Prix Achat
+            { wch: 15 },  // Prix Vente
+            { wch: 10 },  // Quantité
+            { wch: 15 },  // Valeur Stock
+            { wch: 12 },  // Marge
+            { wch: 12 },  // Marge %
+            { wch: 12 },  // Statut
+            { wch: 20 }   // Dernière Mise à jour
+        ];
+        ws['!cols'] = colWidths;
+
+        // Ajouter la feuille au workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'Stock');
+
+        // Feuille 2 : Analyse par type
+        const types = {};
+        articles.forEach(article => {
+            if (!types[article.type]) {
+                types[article.type] = {
+                    count: 0,
+                    quantity: 0,
+                    value: 0,
+                    investment: 0
+                };
+            }
+            types[article.type].count++;
+            types[article.type].quantity += article.quantite;
+            types[article.type].value += article.prixVente * article.quantite;
+            types[article.type].investment += article.prixAchat * article.quantite;
+        });
+
+        const typeData = Object.entries(types).map(([type, stats]) => [
+            type,
+            stats.count,
+            stats.quantity,
+            formatCurrency(stats.value),
+            formatCurrency(stats.investment),
+            formatCurrency(stats.value - stats.investment),
+            stats.investment > 0 ? 
+                (((stats.value - stats.investment) / stats.investment) * 100).toFixed(2) + '%' : 'N/A'
+        ]);
+
+        const ws2_data = [
+            ['ANALYSE PAR TYPE DE PRODUIT'],
+            [],
+            ['Type', 'Nombre Articles', 'Quantité Totale', 'Valeur Totale', 'Investissement', 'Bénéfice Potentiel', 'Marge %'],
+            ...typeData
+        ];
+
+        const ws2 = XLSX.utils.aoa_to_sheet(ws2_data);
+        const colWidths2 = [
+            { wch: 20 },
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 20 },
+            { wch: 12 }
+        ];
+        ws2['!cols'] = colWidths2;
+        XLSX.utils.book_append_sheet(wb, ws2, 'Analyse par Type');
+
+        // Générer et télécharger le fichier
+        const fileName = `stock_theovet_${today.replace(/\//g, '-')}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        
+        showAlert(`✅ Rapport Excel exporté: ${fileName}`, 'success');
+        
+    } catch (error) {
+        console.error('Erreur export Excel:', error);
+        showAlert('❌ Erreur lors de l\'export Excel', 'danger');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function exporterStockCSV() {
+    if (articles.length === 0) {
+        showAlert("❌ Aucun article en stock à exporter", "warning");
+        return;
+    }
+
+    try {
+        showLoading(true, 'Génération du fichier CSV...');
+        
+        // En-têtes CSV
+        const headers = [
+            'Article',
+            'Type',
+            'Description',
+            'Prix Achat (FC)',
+            'Prix Vente (FC)',
+            'Quantité',
+            'Valeur Stock (FC)',
+            'Marge (FC)',
+            'Marge (%)',
+            'Statut Stock',
+            'Date Ajout'
+        ];
+
+        // Données
+        const rows = articles.map(article => [
+            `"${article.nom}"`,
+            `"${article.type}"`,
+            `"${article.description || ''}"`,
+            article.prixAchat,
+            article.prixVente,
+            article.quantite,
+            article.prixVente * article.quantite,
+            article.prixVente - article.prixAchat,
+            article.prixAchat > 0 ? 
+                (((article.prixVente - article.prixAchat) / article.prixAchat) * 100).toFixed(2) + '%' : 'N/A',
+            article.quantite < 5 ? 'CRITIQUE' : 
+            article.quantite < 15 ? 'FAIBLE' : 'NORMAL',
+            article.createdAt ? 
+                article.createdAt.toDate().toLocaleDateString('fr-FR') : 'N/A'
+        ]);
+
+        // Calculer les totaux
+        const totalValeur = articles.reduce((sum, article) => 
+            sum + (article.prixVente * article.quantite), 0);
+        const totalQuantite = articles.reduce((sum, article) => 
+            sum + article.quantite, 0);
+
+        // Créer le contenu CSV
+        let csvContent = headers.join(',') + '\n';
+        rows.forEach(row => {
+            csvContent += row.join(',') + '\n';
+        });
+
+        // Ajouter les totaux
+        csvContent += '\n';
+        csvContent += `Total Articles,${articles.length}\n`;
+        csvContent += `Total Quantité,${totalQuantite}\n`;
+        csvContent += `Valeur Totale du Stock,${totalValeur} FC\n`;
+        csvContent += `Date d'export,${new Date().toLocaleString('fr-FR')}\n`;
+        csvContent += `Exporté par,${userData.name}\n`;
+
+        // Créer et télécharger le fichier
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `stock_theovet_${today.replace(/\//g, '-')}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showAlert(`✅ Fichier CSV exporté avec succès`, 'success');
+        
+    } catch (error) {
+        console.error('Erreur export CSV:', error);
+        showAlert('❌ Erreur lors de l\'export CSV', 'danger');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function genererRapportStockComplet() {
+    if (articles.length === 0) {
+        showAlert("❌ Aucun article en stock pour générer un rapport", "warning");
+        return;
+    }
+
+    try {
+        showLoading(true, 'Génération du rapport détaillé...');
+        
+        // Créer le PDF
+        const doc = new jsPDF('landscape');
+        
+        // ===== PAGE 1 : RAPPORT DÉTAILLÉ =====
+        // En-tête
+        doc.setFontSize(24);
+        doc.setTextColor(52, 152, 219);
+        doc.text("📊 RAPPORT COMPLET DU STOCK", 148, 20, { align: "center" });
+        
+        doc.setFontSize(12);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Date: ${today} | Généré par: ${userData.name} | Rôle: ${userRole}`, 148, 28, { align: "center" });
+        
+        // Statistiques générales
+        const totalValeur = articles.reduce((sum, article) => 
+            sum + (article.prixVente * article.quantite), 0);
+        const totalQuantite = articles.reduce((sum, article) => 
+            sum + article.quantite, 0);
+        const totalInvestissement = articles.reduce((sum, article) => 
+            sum + (article.prixAchat * article.quantite), 0);
+        const beneficePotentiel = totalValeur - totalInvestissement;
+        const margeMoyenne = totalInvestissement > 0 ? 
+            (beneficePotentiel / totalInvestissement * 100).toFixed(2) : 0;
+        
+        // Boîte de statistiques
+        doc.setFillColor(240, 248, 255);
+        doc.rect(10, 35, 276, 25, 'F');
+        
+        doc.setFontSize(11);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont(undefined, 'bold');
+        
+        const stats = [
+            `Articles: ${articles.length}`,
+            `Quantité totale: ${totalQuantite}`,
+            `Valeur stock: ${formatCurrency(totalValeur)}`,
+            `Investissement: ${formatCurrency(totalInvestissement)}`,
+            `Bénéfice potentiel: ${formatCurrency(beneficePotentiel)}`,
+            `Marge moyenne: ${margeMoyenne}%`
+        ];
+        
+        stats.forEach((stat, i) => {
+            const x = 15 + (i % 3) * 90;
+            const y = 45 + Math.floor(i / 3) * 8;
+            doc.text(stat, x, y);
+        });
+        
+        // Tableau principal
+        const tableData = articles.map((article, index) => [
+            (index + 1).toString(),
+            article.nom.length > 20 ? article.nom.substring(0, 17) + '...' : article.nom,
+            article.type,
+            formatCurrency(article.prixAchat),
+            formatCurrency(article.prixVente),
+            article.quantite.toString(),
+            formatCurrency(article.prixVente * article.quantite),
+            formatCurrency(article.prixVente - article.prixAchat),
+            article.prixAchat > 0 ? 
+                (((article.prixVente - article.prixAchat) / article.prixAchat) * 100).toFixed(2) + '%' : 'N/A',
+            getStockStatus(article.quantite)
+        ]);
+        
+        doc.autoTable({
+            startY: 65,
+            head: [['#', 'Article', 'Type', 'Prix Achat', 'Prix Vente', 'Qty', 'Valeur', 'Marge', 'Marge %', 'Statut']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { 
+                fillColor: [52, 152, 219], 
+                textColor: 255, 
+                fontStyle: 'bold',
+                fontSize: 9
+            },
+            styles: { 
+                fontSize: 8,
+                cellPadding: 3,
+                overflow: 'linebreak'
+            },
+            columnStyles: {
+                0: { cellWidth: 10 },
+                1: { cellWidth: 40 },
+                2: { cellWidth: 25 },
+                3: { cellWidth: 25 },
+                4: { cellWidth: 25 },
+                5: { cellWidth: 15 },
+                6: { cellWidth: 25 },
+                7: { cellWidth: 25 },
+                8: { cellWidth: 20 },
+                9: { cellWidth: 20 }
+            },
+            didParseCell: function(data) {
+                // Colorier les lignes selon le statut du stock
+                if (data.row.index >= 0) {
+                    const quantite = articles[data.row.index].quantite;
+                    if (quantite < 5) {
+                        data.cell.styles.fillColor = [255, 235, 238]; // Rouge clair
+                    } else if (quantite < 15) {
+                        data.cell.styles.fillColor = [255, 249, 196]; // Jaune clair
+                    }
+                }
+            }
+        });
+        
+        // ===== PAGE 2 : ANALYSE PAR TYPE =====
+        doc.addPage('landscape');
+        
+        doc.setFontSize(20);
+        doc.setTextColor(46, 204, 113);
+        doc.text("📈 ANALYSE PAR TYPE DE PRODUIT", 148, 20, { align: "center" });
+        
+        // Grouper par type
+        const types = {};
+        articles.forEach(article => {
+            if (!types[article.type]) {
+                types[article.type] = {
+                    count: 0,
+                    quantity: 0,
+                    value: 0,
+                    investment: 0,
+                    articles: []
+                };
+            }
+            types[article.type].count++;
+            types[article.type].quantity += article.quantite;
+            types[article.type].value += article.prixVente * article.quantite;
+            types[article.type].investment += article.prixAchat * article.quantite;
+            types[article.type].articles.push(article.nom);
+        });
+        
+        // Tableau d'analyse
+        const analysisData = Object.entries(types).map(([type, stats]) => [
+            type,
+            stats.count.toString(),
+            stats.quantity.toString(),
+            formatCurrency(stats.value),
+            formatCurrency(stats.investment),
+            formatCurrency(stats.value - stats.investment),
+            stats.investment > 0 ? 
+                (((stats.value - stats.investment) / stats.investment) * 100).toFixed(2) + '%' : 'N/A',
+            (stats.value / totalValeur * 100).toFixed(1) + '%'
+        ]);
+        
+        doc.autoTable({
+            startY: 30,
+            head: [['Type', 'Articles', 'Quantité', 'Valeur', 'Investissement', 'Bénéfice', 'Marge %', '% Total']],
+            body: analysisData,
+            theme: 'grid',
+            headStyles: { 
+                fillColor: [46, 204, 113], 
+                textColor: 255, 
+                fontStyle: 'bold' 
+            },
+            styles: { 
+                fontSize: 9,
+                cellPadding: 4
+            },
+            columnStyles: {
+                7: { halign: 'center' }
+            }
+        });
+        
+        // Diagramme circulaire (simulé)
+        const pieY = doc.lastAutoTable.finalY + 20;
+        doc.setFontSize(14);
+        doc.setTextColor(52, 73, 94);
+        doc.text("📊 Répartition de la valeur par type", 20, pieY);
+        
+        // Dessiner un diagramme circulaire simple
+        drawPieChart(doc, types, totalValeur, pieY + 10);
+        
+        // ===== PAGE 3 : ALERTES ET RECOMMANDATIONS =====
+        doc.addPage('landscape');
+        
+        doc.setFontSize(20);
+        doc.setTextColor(231, 76, 60);
+        doc.text("⚠️ ALERTES ET RECOMMANDATIONS", 148, 20, { align: "center" });
+        
+        // Articles à faible stock
+        const lowStock = articles.filter(a => a.quantite < 15);
+        const criticalStock = articles.filter(a => a.quantite < 5);
+        
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        
+        let yPos = 35;
+        
+        if (criticalStock.length > 0) {
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(231, 76, 60);
+            doc.text("🚨 STOCK CRITIQUE (< 5 unités)", 20, yPos);
+            doc.setFont(undefined, 'normal');
+            yPos += 8;
+            
+            criticalStock.forEach((article, i) => {
+                doc.text(`• ${article.nom}: ${article.quantite} unités restantes`, 25, yPos);
+                yPos += 7;
+            });
+            yPos += 5;
+        }
+        
+        if (lowStock.length > 0) {
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(243, 156, 18);
+            doc.text("⚠️ STOCK FAIBLE (5-15 unités)", 20, yPos);
+            doc.setFont(undefined, 'normal');
+            yPos += 8;
+            
+            lowStock.forEach((article, i) => {
+                doc.text(`• ${article.nom}: ${article.quantite} unités restantes`, 25, yPos);
+                yPos += 7;
+            });
+            yPos += 5;
+        }
+        
+        // Articles les plus rentables
+        const profitable = [...articles]
+            .sort((a, b) => {
+                const margeA = a.prixVente - a.prixAchat;
+                const margeB = b.prixVente - b.prixAchat;
+                return margeB - margeA;
+            })
+            .slice(0, 5);
+        
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(39, 174, 96);
+        doc.text("🏆 TOP 5 ARTICLES LES PLUS RENTABLES", 20, yPos);
+        doc.setFont(undefined, 'normal');
+        yPos += 8;
+        
+        profitable.forEach((article, i) => {
+            const marge = article.prixVente - article.prixAchat;
+            const margePourcentage = article.prixAchat > 0 ? 
+                (marge / article.prixAchat * 100).toFixed(1) : 0;
+            
+            doc.text(`${i + 1}. ${article.nom}: ${formatCurrency(marge)} (${margePourcentage}%)`, 25, yPos);
+            yPos += 7;
+        });
+        
+        // Recommandations
+        yPos += 10;
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(52, 152, 219);
+        doc.text("💡 RECOMMANDATIONS", 20, yPos);
+        doc.setFont(undefined, 'normal');
+        yPos += 8;
+        
+        const recommendations = [
+            `Réapprovisionner ${criticalStock.length} article(s) en stock critique`,
+            `Surveiller ${lowStock.length} article(s) en stock faible`,
+            `Promouvoir les articles à forte marge`,
+            `Réviser les prix des articles à faible rotation`,
+            `Considérer des promotions pour écouler le vieux stock`
+        ];
+        
+        recommendations.forEach((rec, i) => {
+            doc.text(`• ${rec}`, 25, yPos);
+            yPos += 7;
+        });
+        
+        // Pied de page
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Rapport généré le ${new Date().toLocaleString('fr-FR')}`, 148, 190, { align: "center" });
+        doc.text("TheoVêt - Gestion de Stock Intelligente", 148, 195, { align: "center" });
+        
+        // Sauvegarder le PDF
+        const fileName = `rapport_stock_complet_${today.replace(/\//g, '-')}.pdf`;
+        doc.save(fileName);
+        
+        showAlert(`✅ Rapport complet exporté: ${fileName}`, 'success');
+        
+        // Journaliser l'action
+        await logOperation('rapport_stock', `Rapport stock complet exporté`, {
+            nombreArticles: articles.length,
+            valeurTotale: totalValeur,
+            nomFichier: fileName
+        });
+        
+    } catch (error) {
+        console.error('Erreur rapport complet:', error);
+        showAlert('❌ Erreur lors de la génération du rapport', 'danger');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Fonction utilitaire pour le statut du stock
+function getStockStatus(quantity) {
+    if (quantity === 0) return 'RUPTURE';
+    if (quantity < 5) return 'CRITIQUE';
+    if (quantity < 15) return 'FAIBLE';
+    if (quantity < 30) return 'MOYEN';
+    return 'BON';
+}
+
+// Fonction pour dessiner un diagramme circulaire simple
+function drawPieChart(doc, types, totalValue, startY) {
+    const centerX = 80;
+    const centerY = startY + 40;
+    const radius = 35;
+    
+    let currentAngle = 0;
+    const colors = [
+        [52, 152, 219],   // Bleu
+        [46, 204, 113],   // Vert
+        [155, 89, 182],   // Violet
+        [241, 196, 15],   // Jaune
+        [230, 126, 34],   // Orange
+        [231, 76, 60],    // Rouge
+        [149, 165, 166],  // Gris
+        [22, 160, 133]    // Turquoise
+    ];
+    
+    // Trier les types par valeur décroissante
+    const sortedTypes = Object.entries(types)
+        .sort((a, b) => b[1].value - a[1].value);
+    
+    // Dessiner les sections
+    sortedTypes.forEach(([type, data], index) => {
+        const percentage = (data.value / totalValue);
+        const angle = percentage * 2 * Math.PI;
+        
+        // Couleur
+        const color = colors[index % colors.length];
+        doc.setFillColor(color[0], color[1], color[2]);
+        
+        // Dessiner la section
+        doc.ellipse(centerX, centerY, radius, radius, 0, 
+                   currentAngle, currentAngle + angle, 'F');
+        
+        currentAngle += angle;
+    });
+    
+    // Dessiner le centre
+    doc.setFillColor(255, 255, 255);
+    doc.circle(centerX, centerY, radius * 0.4, 'F');
+    
+    // Légende
+    const legendX = 130;
+    let legendY = startY;
+    
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    
+    sortedTypes.forEach(([type, data], index) => {
+        const color = colors[index % colors.length];
+        const percentage = ((data.value / totalValue) * 100).toFixed(1);
+        
+        // Carré de couleur
+        doc.setFillColor(color[0], color[1], color[2]);
+        doc.rect(legendX, legendY, 5, 5, 'F');
+        
+        // Texte
+        doc.text(`${type}: ${percentage}% (${formatCurrency(data.value)})`, 
+                legendX + 8, legendY + 4);
+        
+        legendY += 8;
+    });
+}
+
+// Fonction améliorée pour exporter le stock en PDF
+function exporterPDF() {
+    if (articles.length === 0) {
+        showAlert("❌ Aucun article en stock à exporter", "warning");
+        return;
+    }
+
+    try {
+        const doc = new jsPDF('landscape');
+        
+        // En-tête
+        doc.setFontSize(22);
+        doc.setTextColor(52, 152, 219);
+        doc.text("📦 RAPPORT DU STOCK - TheoVêt", 148, 20, { align: "center" });
+        
+        doc.setFontSize(12);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Date: ${today} | Généré par: ${userData.name} | Total: ${articles.length} articles`, 148, 28, { align: "center" });
+        
+        // Statistiques rapides
+        const totalValeur = articles.reduce((sum, article) => 
+            sum + (article.prixVente * article.quantite), 0);
+        const totalQuantite = articles.reduce((sum, article) => 
+            sum + article.quantite, 0);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont(undefined, 'bold');
+        doc.text(`Valeur totale du stock: ${formatCurrency(totalValeur)}`, 20, 40);
+        doc.text(`Quantité totale: ${totalQuantite} unités`, 20, 47);
+        
+        // Tableau des articles
+        const tableData = articles.map((article, index) => [
+            (index + 1).toString(),
+            article.nom.length > 25 ? article.nom.substring(0, 22) + '...' : article.nom,
+            article.type,
+            formatCurrency(article.prixAchat),
+            formatCurrency(article.prixVente),
+            article.quantite.toString(),
+            formatCurrency(article.prixVente * article.quantite),
+            article.quantite < 5 ? 'CRITIQUE' : 
+            article.quantite < 15 ? 'FAIBLE' : 'NORMAL'
+        ]);
+        
+        doc.autoTable({
+            startY: 55,
+            head: [['#', 'Article', 'Type', 'Prix Achat', 'Prix Vente', 'Quantité', 'Valeur', 'Statut']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { 
+                fillColor: [52, 152, 219], 
+                textColor: 255, 
+                fontStyle: 'bold',
+                fontSize: 10
+            },
+            styles: { 
+                fontSize: 9,
+                cellPadding: 4
+            },
+            columnStyles: {
+                1: { cellWidth: 50 },
+                7: { halign: 'center' }
+            },
+            didParseCell: function(data) {
+                // Colorier les lignes selon le statut du stock
+                if (data.column.index === 7 && data.cell.raw === 'CRITIQUE') {
+                    data.cell.styles.textColor = [231, 76, 60];
+                    data.cell.styles.fontStyle = 'bold';
+                } else if (data.column.index === 7 && data.cell.raw === 'FAIBLE') {
+                    data.cell.styles.textColor = [243, 156, 18];
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            },
+            willDrawCell: function(data) {
+                // Surligner les lignes avec stock critique
+                if (data.row.index >= 0) {
+                    const quantite = articles[data.row.index].quantite;
+                    if (quantite < 5) {
+                        doc.setFillColor(255, 235, 238);
+                        doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
+                    }
+                }
+            }
+        });
+        
+        // Pied de page
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Document généré le ${new Date().toLocaleString('fr-FR')}`, 148, finalY, { align: "center" });
+        doc.text("TheoVêt - Solution de gestion de commerce", 148, finalY + 5, { align: "center" });
+        
+        doc.save(`stock_theovet_${today.replace(/\//g, '-')}.pdf`);
+        showAlert("✅ Rapport PDF exporté avec succès", 'success');
+    } catch (error) {
+        console.error('Erreur export PDF:', error);
+        showAlert('❌ Erreur lors de l\'export PDF', 'danger');
     }
 }
 
