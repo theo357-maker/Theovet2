@@ -6729,17 +6729,51 @@ async function logOperation(type, description, details = {}) {
 
 async function uploadImage(imageData, path) {
     try {
+        // Conversion de dataURL en blob
         const response = await fetch(imageData);
         const blob = await response.blob();
-        const ref = storage.ref().child(path);
-        const snapshot = await ref.put(blob);
-        return await snapshot.ref.getDownloadURL();
+        
+        // Création du FormData pour Cloudinary
+        const formData = new FormData();
+        formData.append('file', blob);
+        formData.append('upload_preset', 'cs_lacolombe');
+        formData.append('folder', 'cs-lacolombe');
+        
+        // Upload vers Cloudinary
+        const cloudinaryResponse = await fetch(
+            `https://api.cloudinary.com/v1_1/diwn8sxtn/image/upload`,
+            { 
+                method: 'POST', 
+                body: formData 
+            }
+        );
+        
+        if (!cloudinaryResponse.ok) {
+            throw new Error(`HTTP error! status: ${cloudinaryResponse.status}`);
+        }
+        
+        const data = await cloudinaryResponse.json();
+        return data.secure_url;
+        
     } catch (error) {
         console.error('Erreur upload image:', error);
-        throw error;
+        
+        // Fallback: stocker dans Firebase Storage si Cloudinary échoue
+        try {
+            console.log('Fallback: utilisation de Firebase Storage');
+            const timestamp = Date.now();
+            const fileName = `article_${timestamp}.jpg`;
+            const ref = storage.ref().child(`articles/${fileName}`);
+            const response = await fetch(imageData);
+            const blob = await response.blob();
+            const snapshot = await ref.put(blob);
+            return await snapshot.ref.getDownloadURL();
+        } catch (fallbackError) {
+            console.error('Erreur fallback:', fallbackError);
+            return null;
+        }
     }
 }
-
 function showTab(tabId) {
     if (!checkAuth()) return;
     
