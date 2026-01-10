@@ -31,6 +31,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
+<!-- Ajoutez après les autres scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <!-- Dans la section <head>, ajoutez cette ligne après les autres scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -121,6 +125,343 @@
       height: 4px;
       background: linear-gradient(90deg, var(--primary), var(--success), var(--warning));
     }
+
+/* Ajoutez ce code dans votre section <style> */
+
+/* Style pour le tableau des statistiques */
+#statsTable {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--light-dark);
+}
+
+#statsTable thead {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--info) 100%);
+    color: white;
+}
+
+/* Amélioration du sélecteur de type */
+#statsType {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 2px solid var(--primary-light);
+    border-radius: var(--radius);
+    padding: 12px 15px;
+    font-size: 1rem;
+    color: var(--secondary);
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.1);
+}
+
+#statsType:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    outline: none;
+    background: #ffffff;
+}
+
+/* Style pour les dates */
+#statsStartDate, #statsEndDate {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 2px solid var(--primary-light);
+    border-radius: var(--radius);
+    padding: 12px 15px;
+    font-size: 1rem;
+    color: var(--secondary);
+    transition: all 0.3s ease;
+}
+
+#statsStartDate:focus, #statsEndDate:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    outline: none;
+    background: #ffffff;
+}
+
+#statsTable th {
+    background: transparent;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 15px 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+#statsTable tbody tr {
+    background: rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease;
+}
+
+#statsTable tbody tr:nth-child(even) {
+    background: rgba(52, 152, 219, 0.05);
+}
+
+#statsTable tbody tr:hover {
+    background: rgba(52, 152, 219, 0.1);
+    transform: translateX(5px);
+}
+
+#statsTable td {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 12px 10px;
+    color: var(--secondary);
+}
+
+/* Style pour les cartes de statistiques */
+.stats-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: var(--radius);
+    padding: 25px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--primary);
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--success), var(--warning));
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+    background: linear-gradient(135deg, #ffffff 0%, #e9ecef 100%);
+}
+
+.stats-card h4 {
+    color: var(--secondary);
+    margin-bottom: 15px;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.stats-card h4 i {
+    color: var(--primary);
+    font-size: 1.2rem;
+}
+
+.stats-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 15px 0;
+    background: linear-gradient(135deg, var(--primary), var(--info));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stats-trend {
+    font-size: 0.9rem;
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+/* Style pour le conteneur du graphique */
+.canvas-container {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    padding: 25px;
+    border-radius: var(--radius);
+    border: 1px solid var(--light-dark);
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.canvas-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--success));
+}
+
+/* Style pour la section principale */
+#statistics .section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--light-dark);
+    position: relative;
+    overflow: hidden;
+}
+
+#statistics .section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--success), var(--warning));
+}
+
+/* Style pour les boutons d'export */
+#statsExportButtons .btn {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--info) 100%);
+    color: white;
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+#statsExportButtons .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+}
+
+#statsExportButtons .btn-warning {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+}
+
+#statsExportButtons .btn-warning:hover {
+    box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
+}
+
+#statsExportButtons .btn-success {
+    background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
+}
+
+#statsExportButtons .btn-success:hover {
+    box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+}
+
+/* Style pour le résumé */
+#statsSummary {
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(46, 204, 113, 0.1) 100%);
+    border-radius: var(--radius);
+    padding: 20px;
+    border: 1px solid rgba(52, 152, 219, 0.2);
+    margin-top: 20px;
+}
+
+#statsSummary h4 {
+    color: var(--secondary);
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Style pour l'état vide */
+#emptyStats {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 249, 250, 0.9) 100%);
+    border-radius: var(--radius);
+    padding: 40px;
+    border: 2px dashed var(--light-dark);
+}
+
+#emptyStats i {
+    font-size: 4rem;
+    background: linear-gradient(135deg, var(--primary), var(--info));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 20px;
+}
+
+#emptyStats p {
+    color: var(--secondary);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+#emptyStats .text-muted {
+    color: var(--gray);
+    font-size: 0.9rem;
+    font-weight: normal;
+}
+
+/* Style pour les cartes de statistiques avancées */
+#advancedStatsContent .stats-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#advancedStatsContent .stats-card h4 {
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--info-light) 100%);
+    padding: 12px;
+    margin: -25px -25px 20px -25px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    color: var(--secondary);
+    font-size: 1rem;
+}
+
+/* Style pour les images dans les tableaux */
+.article-image-stat {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid var(--primary-light);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.article-image-stat:hover {
+    transform: scale(1.05);
+    border-color: var(--primary);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+.article-image-stat-placeholder {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--light) 0%, var(--primary-light) 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    border: 2px solid var(--light-dark);
+    font-size: 1.5rem;
+}
+
+/* Responsive design pour les statistiques */
+@media (max-width: 768px) {
+    .stats-card {
+        padding: 20px 15px;
+    }
+    
+    .stats-value {
+        font-size: 2rem;
+    }
+    
+    #statsTable th,
+    #statsTable td {
+        padding: 10px 8px;
+        font-size: 0.85rem;
+    }
+    
+    .article-image-stat {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .article-image-stat-placeholder {
+        width: 50px;
+        height: 50px;
+    }
+}
     
     .auth-form h2 {
       text-align: center;
@@ -699,6 +1040,57 @@
       border: 1px solid var(--light-dark);
       font-weight: 600;
     }
+
+/* Ajoutez dans la section <style> */
+.article-image-stat {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--light-dark);
+}
+
+.article-image-stat-placeholder {
+    width: 60px;
+    height: 60px;
+    background: var(--light);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray);
+    border: 1px solid var(--light-dark);
+}
+
+/* Amélioration des tableaux avec images */
+#statsTable td:first-child {
+    padding: 5px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#statsTable .article-with-image {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Pour les versions mobiles */
+@media (max-width: 768px) {
+    .article-image-stat {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .article-image-stat-placeholder {
+        width: 40px;
+        height: 40px;
+    }
+    
+    #statsTable td:first-child {
+        padding: 3px;
+    }
+}
     
     .upload-btn:hover {
       background: var(--primary-light);
@@ -1153,6 +1545,128 @@
       align-items: center;
       gap: 10px;
     }
+
+/* Styles pour les statistiques */
+.canvas-container {
+    background: var(--white);
+    padding: 20px;
+    border-radius: var(--radius);
+    border: 1px solid var(--light-dark);
+    text-align: center;
+}
+
+.stats-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--primary);
+    text-align: center;
+}
+
+.stats-card h4 {
+    color: var(--secondary);
+    margin-bottom: 15px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.stats-value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 10px 0;
+    color: var(--primary);
+}
+
+.stats-trend {
+    font-size: 0.9rem;
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.stats-trend.up {
+    color: var(--success);
+}
+
+.stats-trend.down {
+    color: var(--danger);
+}
+
+.percentage-change {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+.percentage-change.positive {
+    background: var(--success-light);
+    color: var(--success-dark);
+}
+
+.percentage-change.negative {
+    background: var(--danger-light);
+    color: var(--danger-dark);
+}
+
+/* Tableau des statistiques */
+#statsTable th {
+    background: linear-gradient(135deg, var(--primary), var(--info));
+    color: white;
+}
+
+#statsTable tr:nth-child(even) {
+    background-color: var(--primary-light);
+}
+
+#statsTable td {
+    padding: 10px;
+    border-bottom: 1px solid var(--light-dark);
+}
+
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+}
+
+.legend-color {
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+}
+
+/* Responsive pour les graphiques */
+@media (max-width: 768px) {
+    .canvas-container {
+        padding: 10px;
+    }
+    
+    #statsChart {
+        height: 250px !important;
+    }
+    
+    .stats-card {
+        padding: 15px;
+    }
+    
+    .stats-value {
+        font-size: 1.5rem;
+    }
+}
 
     .plan-features .fa-check {
       color: var(--success);
@@ -1852,6 +2366,11 @@
       <button class="tab-button" onclick="showTab('reports')">
         <i class="fas fa-file-alt"></i> Rapports
       </button>
+
+<!-- Dans la navigation par onglets (cherchez la div avec class="tabs") -->
+<button class="tab-button" onclick="showTab('statistics')">
+    <i class="fas fa-chart-pie"></i> Statistiques globales
+</button>
       <button class="tab-button" onclick="showTab('archives')">
         <i class="fas fa-archive"></i> Archives
       </button>
@@ -2347,6 +2866,110 @@
       </div>
     </div>
     
+<!-- Onglet Statistiques globales -->
+<div id="statistics" class="tab-content">
+    <div class="section">
+        <h2 class="section-title"><i class="fas fa-chart-pie"></i> Statistiques Globales</h2>
+        
+        <div class="grid-2">
+            <div class="section">
+                <h3 class="section-title"><i class="fas fa-filter"></i> Filtres de période</h3>
+                
+                <div class="form-group">
+                    <label for="statsType"><i class="fas fa-chart-bar"></i> Type de rapport</label>
+                    <select id="statsType" onchange="toggleStatsFilters()">
+                        <option value="sales">Rapport des ventes</option>
+                        <option value="stock">Rapport du stock</option>
+                        <option value="revenue">Analyse des revenus</option>
+                    </select>
+                </div>
+                
+                <div class="payment-container">
+                    <div class="form-group">
+                        <label for="statsStartDate"><i class="fas fa-calendar"></i> Date de début</label>
+                        <input type="date" id="statsStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="statsEndDate"><i class="fas fa-calendar"></i> Date de fin</label>
+                        <input type="date" id="statsEndDate">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="statsCategory"><i class="fas fa-tags"></i> Catégorie (optionnel)</label>
+                    <select id="statsCategory">
+                        <option value="">Toutes les catégories</option>
+                        <option value="friperie">Friperie</option>
+                        <option value="magasin">Magasin</option>
+                        <option value="luxe">Luxe</option>
+                        <option value="sport">Sport</option>
+                        <option value="enfant">Enfant</option>
+                        <option value="femme">Femme</option>
+                        <option value="homme">Homme</option>
+                        <option value="accessoire">Accessoire</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-success btn-block" onclick="genererRapportParPeriode()">
+                    <i class="fas fa-chart-line"></i> Générer le rapport
+                </button>
+                
+                <div id="statsSummary" style="display: none; margin-top: 20px;">
+                    <h4><i class="fas fa-clipboard-list"></i> Résumé</h4>
+                    <div id="statsSummaryContent"></div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3 class="section-title"><i class="fas fa-chart-bar"></i> Graphiques</h3>
+                
+                <div class="canvas-container" style="margin: 20px 0;">
+                    <canvas id="statsChart" width="400" height="300" style="max-width: 100%;"></canvas>
+                </div>
+                
+                <div class="table-responsive" id="statsTableContainer" style="display: none;">
+                    <table id="statsTable">
+                        <thead>
+                            <tr id="statsTableHeaders">
+                                <!-- Les en-têtes seront générés dynamiquement -->
+                            </tr>
+                        </thead>
+                        <tbody id="statsTableBody">
+                            <!-- Les données seront générées dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="empty-state" id="emptyStats">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Aucune donnée à afficher</p>
+                    <p class="text-muted">Sélectionnez une période et générez un rapport</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section" id="advancedStats" style="display: none;">
+            <h3 class="section-title"><i class="fas fa-chart-area"></i> Statistiques avancées</h3>
+            
+            <div class="grid-3" id="advancedStatsContent">
+                <!-- Les statistiques avancées seront générées ici -->
+            </div>
+        </div>
+        
+        <div class="export-buttons" id="statsExportButtons" style="display: none;">
+            <button class="btn btn-warning" onclick="exporterRapportPDF()">
+                <i class="fas fa-file-pdf"></i> Exporter en PDF
+            </button>
+            <button class="btn btn-success" onclick="exporterRapportExcel()">
+                <i class="fas fa-file-excel"></i> Exporter en Excel
+            </button>
+            <button class="btn btn-info" onclick="imprimerRapport()">
+                <i class="fas fa-print"></i> Imprimer
+            </button>
+        </div>
+    </div>
+</div>
+
     <!-- Onglet Archives -->
     <div id="archives" class="tab-content">
       <div class="section">
@@ -2877,6 +3500,11 @@ const auth = firebase.auth();
 const storage = firebase.storage();
 
 // Variables globales
+
+// Ajoutez après les autres variables globales
+let currentStatsData = null;
+let statsChart = null;
+let statsPeriod = null;
 let articles = [];
 let ventes = [];
 let depenses = [];
@@ -3048,6 +3676,30 @@ document.addEventListener('DOMContentLoaded', function() {
     checkPreviousSession();
     initializePaymentSystem();
 });
+// Ajoutez dans la fonction setupEventListeners() ou dans showTab('statistics')
+function setupStatsDates() {
+    const today = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+    
+    // Formater les dates YYYY-MM-DD
+    const formatDate = (date) => date.toISOString().split('T')[0];
+    
+    document.getElementById('statsStartDate').value = formatDate(oneMonthAgo);
+    document.getElementById('statsEndDate').value = formatDate(today);
+}
+
+// Modifiez la fonction showTab pour initialiser les dates
+function showTab(tabId) {
+    // ... code existant ...
+    
+    switch(tabId) {
+        // ... autres cas existants ...
+        case 'statistics':
+            setupStatsDates();
+            break;
+    }
+}
 
 function initializeAuth() {
   auth.onAuthStateChanged(async (user) => {
@@ -7539,6 +8191,2080 @@ document.addEventListener('DOMContentLoaded', () => {
   pwaHandler.checkConnection();
 });
 
+// ==================== STATISTIQUES GLOBALES ====================
+
+function toggleStatsFilters() {
+    const statsType = document.getElementById('statsType').value;
+    const categoryFilter = document.getElementById('statsCategory');
+    
+    // Afficher/masquer le filtre de catégorie selon le type
+    if (statsType === 'stock') {
+        categoryFilter.style.display = 'block';
+    } else {
+        categoryFilter.style.display = 'block';
+    }
+}
+
+async function genererRapportParPeriode() {
+    const startDate = document.getElementById('statsStartDate').value;
+    const endDate = document.getElementById('statsEndDate').value;
+    const statsType = document.getElementById('statsType').value;
+    const category = document.getElementById('statsCategory').value;
+    
+    if (!startDate || !endDate) {
+        showAlert('Veuillez sélectionner une période de dates', 'warning');
+        return;
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    if (start > end) {
+        showAlert('La date de début doit être antérieure à la date de fin', 'danger');
+        return;
+    }
+    
+    // Limiter à 90 jours maximum
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 90) {
+        showAlert('La période ne peut pas dépasser 90 jours', 'warning');
+        return;
+    }
+    
+    try {
+        showLoading(true, 'Génération du rapport...');
+        
+        let data;
+        
+        if (statsType === 'sales') {
+            data = await genererRapportVentes(start, end, category);
+        } else if (statsType === 'stock') {
+            data = await genererRapportStock(start, end, category);
+        } else if (statsType === 'revenue') {
+            data = await genererAnalyseRevenus(start, end, category);
+        }
+        
+        if (!data || data.length === 0) {
+            showAlert('Aucune donnée trouvée pour cette période', 'info');
+            document.getElementById('emptyStats').style.display = 'block';
+            document.getElementById('statsTableContainer').style.display = 'none';
+            document.getElementById('advancedStats').style.display = 'none';
+            document.getElementById('statsExportButtons').style.display = 'none';
+            document.getElementById('statsSummary').style.display = 'none';
+            return;
+        }
+        
+        currentStatsData = data;
+        statsPeriod = { start: startDate, end: endDate, type: statsType, category: category };
+        
+        // Afficher les résultats
+        afficherStatsTable(data, statsType);
+        afficherStatsSummary(data, statsType, startDate, endDate);
+        genererGraphique(data, statsType);
+        afficherStatsAvancees(data, statsType);
+        
+        // Afficher les éléments
+        document.getElementById('emptyStats').style.display = 'none';
+        document.getElementById('statsTableContainer').style.display = 'block';
+        document.getElementById('advancedStats').style.display = 'block';
+        document.getElementById('statsExportButtons').style.display = 'flex';
+        document.getElementById('statsSummary').style.display = 'block';
+        
+        showAlert(`✅ Rapport généré avec succès (${data.length} entrées)`, 'success');
+        
+    } catch (error) {
+        console.error('Erreur génération rapport:', error);
+        showAlert('❌ Erreur lors de la génération du rapport', 'danger');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function genererRapportVentes(startDate, endDate, category = '') {
+    try {
+        // Charger les archives pour la période
+        const archivesSnapshot = await db.collection('archives')
+            .where('timestamp', '>=', startDate)
+            .where('timestamp', '<=', endDate)
+            .orderBy('timestamp', 'asc')
+            .get();
+        
+        // Charger TOUS les articles pour les infos complètes
+        const articlesSnapshot = await db.collection('articles').get();
+        
+        // Créer une map des articles par NOM
+        const articlesMap = {};
+        articlesSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            // Stocker par nom d'article (en minuscules pour éviter les problèmes de casse)
+            const nomNormalise = data.nom.toLowerCase().trim();
+            articlesMap[nomNormalise] = {
+                id: doc.id,
+                nom: data.nom, // Le nom original
+                type: data.type || 'Non classé',
+                prixAchat: data.prixAchat || 0,
+                image: data.image || null,
+                description: data.description || ''
+            };
+        });
+        
+        const ventes = [];
+        
+        archivesSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            
+            // DEBUG: Afficher les données brutes pour comprendre la structure
+            console.log('Données archive:', {
+                id: doc.id,
+                article: data.article,
+                nom: data.nom, // Vérifier si c'est 'article' ou 'nom'
+                type: data.type
+            });
+            
+            // Utiliser 'article' ou 'nom' selon la structure de vos données
+            const nomArticle = data.article || data.nom || 'Article inconnu';
+            const nomNormalise = nomArticle.toLowerCase().trim();
+            
+            // Obtenir les infos de l'article
+            const articleInfo = articlesMap[nomNormalise] || {
+                id: null,
+                nom: nomArticle,
+                type: 'Non classé',
+                prixAchat: 0,
+                image: null,
+                description: ''
+            };
+            
+            // Filtrer par type si spécifié
+            if (category && articleInfo.type !== category && category !== '') {
+                return; // Ignorer cet article si le type ne correspond pas
+            }
+            
+            // S'assurer que c'est une vente (pas une réservation)
+            if (data.type && data.type === 'réservation_finalisee') {
+                // C'est une réservation, pas une vente directe
+                // Vous pouvez décider de l'inclure ou non
+                // Pour l'instant, nous l'incluons mais avec un type spécial
+                articleInfo.type = 'Réservation';
+            }
+            
+            // Calculer les statistiques
+            const quantite = parseInt(data.quantite) || 0;
+            const prixUnitaire = parseFloat(data.prixUnitaire) || 0;
+            const total = parseFloat(data.total) || 0;
+            const montantVerse = parseFloat(data.montantVerse) || 0;
+            
+            // Calcul du coût d'achat
+            const coutAchat = (articleInfo.prixAchat || 0) * quantite;
+            const benefice = total - coutAchat;
+            const marge = coutAchat > 0 ? (benefice / coutAchat * 100) : 0;
+            
+            // Formater la date
+            let dateVente = data.date;
+            if (!dateVente && data.timestamp) {
+                // Si pas de date, utiliser le timestamp
+                const timestamp = data.timestamp.toDate ? 
+                    data.timestamp.toDate() : 
+                    new Date(data.timestamp);
+                dateVente = timestamp.toLocaleDateString('fr-FR');
+            }
+            
+            ventes.push({
+                id: doc.id,
+                date: dateVente || today,
+                article: articleInfo.nom, // Utiliser le nom de l'articleInfo
+                articleId: articleInfo.id,
+                type: articleInfo.type,
+                image: articleInfo.image,
+                description: articleInfo.description,
+                quantite: quantite,
+                prixUnitaire: prixUnitaire,
+                total: total,
+                montantVerse: montantVerse,
+                resteAPayer: total - montantVerse,
+                coutAchat: coutAchat,
+                benefice: benefice,
+                marge: marge,
+                vendeur: data.vendeur || data.userName || userData?.name || 'Inconnu',
+                heure: data.heure || '',
+                timestamp: data.timestamp
+            });
+        });
+        
+        console.log(`📊 ${ventes.length} ventes chargées pour la période`);
+        console.log('Exemple de vente:', ventes.length > 0 ? ventes[0] : 'Aucune');
+        
+        return ventes;
+        
+    } catch (error) {
+        console.error('Erreur chargement ventes:', error);
+        
+        // Fallback: charger toutes les archives et filtrer côté client
+        try {
+            console.log('Tentative de méthode alternative...');
+            const allArchives = await db.collection('archives')
+                .orderBy('timestamp', 'desc')
+                .limit(100)
+                .get();
+            
+            const ventesFallback = [];
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            
+            // Charger les articles pour le fallback
+            const articlesSnapshot = await db.collection('articles').get();
+            const articlesMapFallback = {};
+            articlesSnapshot.docs.forEach(doc => {
+                const data = doc.data();
+                articlesMapFallback[data.nom?.toLowerCase()] = {
+                    id: doc.id,
+                    nom: data.nom,
+                    type: data.type,
+                    image: data.image,
+                    prixAchat: data.prixAchat
+                };
+            });
+            
+            allArchives.docs.forEach(doc => {
+                const data = doc.data();
+                
+                // Vérifier la date
+                const venteDate = data.timestamp?.toDate ? 
+                    data.timestamp.toDate() : 
+                    new Date(data.timestamp || data.date);
+                
+                if (venteDate >= start && venteDate <= end) {
+                    const nomArticle = data.article || data.nom || 'Article inconnu';
+                    const articleInfo = articlesMapFallback[nomArticle?.toLowerCase()] || {
+                        nom: nomArticle,
+                        type: 'Non classé',
+                        image: null,
+                        prixAchat: 0
+                    };
+                    
+                    ventesFallback.push({
+                        id: doc.id,
+                        date: data.date || venteDate.toLocaleDateString('fr-FR'),
+                        article: articleInfo.nom,
+                        type: articleInfo.type,
+                        image: articleInfo.image,
+                        quantite: data.quantite || 0,
+                        prixUnitaire: data.prixUnitaire || 0,
+                        total: data.total || 0,
+                        vendeur: data.vendeur || 'Inconnu'
+                    });
+                }
+            });
+            
+            console.log(`📊 ${ventesFallback.length} ventes chargées (méthode fallback)`);
+            return ventesFallback;
+            
+        } catch (fallbackError) {
+            console.error('Erreur méthode fallback:', fallbackError);
+            return [];
+        }
+    }
+}
+
+// Fonction utilitaire pour debuguer la structure des données
+async function debugDataStructure() {
+    console.log('🔍 DEBUG: Structure des données');
+    
+    try {
+        // Vérifier les archives
+        const archiveSample = await db.collection('archives')
+            .limit(3)
+            .get();
+        
+        console.log('📁 Exemples d\'archives:');
+        archiveSample.docs.forEach((doc, index) => {
+            const data = doc.data();
+            console.log(`Archive ${index + 1}:`, {
+                id: doc.id,
+                article: data.article,
+                nom: data.nom,
+                type: data.type,
+                quantite: data.quantite,
+                total: data.total,
+                vendeur: data.vendeur,
+                date: data.date
+            });
+        });
+        
+        // Vérifier les articles
+        const articleSample = await db.collection('articles')
+            .limit(3)
+            .get();
+        
+        console.log('👕 Exemples d\'articles:');
+        articleSample.docs.forEach((doc, index) => {
+            const data = doc.data();
+            console.log(`Article ${index + 1}:`, {
+                id: doc.id,
+                nom: data.nom,
+                type: data.type,
+                prixAchat: data.prixAchat,
+                prixVente: data.prixVente,
+                image: data.image ? 'Oui' : 'Non'
+            });
+        });
+        
+    } catch (error) {
+        console.error('Erreur debug:', error);
+    }
+}
+
+// Appelez cette fonction dans la console du navigateur pour voir vos données
+// debugDataStructure();
+
+async function genererRapportStock(startDate, endDate, category = '') {
+    try {
+        // Pour le stock, nous utilisons les données actuelles filtrées par catégorie
+        let filteredArticles = [...articles];
+        
+        if (category) {
+            filteredArticles = filteredArticles.filter(article => article.type === category);
+        }
+        
+        // Calculer les statistiques de stock AVEC IMAGES
+        const stats = filteredArticles.map(article => {
+            const valeur = article.prixVente * article.quantite;
+            const investissement = article.prixAchat * article.quantite;
+            const beneficePotentiel = valeur - investissement;
+            const marge = investissement > 0 ? (beneficePotentiel / investissement * 100) : 0;
+            
+            return {
+                article: article.nom,
+                articleId: article.id,
+                type: article.type,
+                image: article.image,
+                description: article.description,
+                prixAchat: article.prixAchat,
+                prixVente: article.prixVente,
+                quantite: article.quantite,
+                valeur: valeur,
+                investissement: investissement,
+                beneficePotentiel: beneficePotentiel,
+                marge: marge,
+                statut: getStockStatus(article.quantite),
+                derniereMaj: article.lastUpdated ? 
+                    article.lastUpdated.toDate().toLocaleDateString('fr-FR') : 'N/A'
+            };
+        });
+        
+        return stats;
+        
+    } catch (error) {
+        console.error('Erreur génération rapport stock:', error);
+        throw error;
+    }
+}
+
+
+async function genererAnalyseRevenus(startDate, endDate, category = '') {
+    try {
+        const ventes = await genererRapportVentes(startDate, endDate, category);
+        
+        // Grouper par jour pour l'analyse des revenus
+        const revenusParJour = {};
+        const ventesParArticle = {};
+        
+        ventes.forEach(vente => {
+            // Par jour
+            const jour = vente.date;
+            if (!revenusParJour[jour]) {
+                revenusParJour[jour] = {
+                    ventes: 0,
+                    revenus: 0,
+                    cout: 0,
+                    benefice: 0,
+                    transactions: 0
+                };
+            }
+            revenusParJour[jour].ventes += vente.quantite;
+            revenusParJour[jour].revenus += vente.total;
+            revenusParJour[jour].cout += vente.coutAchat;
+            revenusParJour[jour].benefice += vente.benefice;
+            revenusParJour[jour].transactions += 1;
+            
+            // Par article
+            if (!ventesParArticle[vente.article]) {
+                ventesParArticle[vente.article] = {
+                    quantite: 0,
+                    revenus: 0,
+                    cout: 0,
+                    benefice: 0
+                };
+            }
+            ventesParArticle[vente.article].quantite += vente.quantite;
+            ventesParArticle[vente.article].revenus += vente.total;
+            ventesParArticle[vente.article].cout += vente.coutAchat;
+            ventesParArticle[vente.article].benefice += vente.benefice;
+        });
+        
+        // Préparer les données pour l'affichage
+        const analyse = {
+            quotidienne: Object.entries(revenusParJour).map(([jour, data]) => ({
+                date: jour,
+                ventes: data.ventes,
+                revenus: data.revenus,
+                cout: data.cout,
+                benefice: data.benefice,
+                transactions: data.transactions,
+                panierMoyen: data.transactions > 0 ? data.revenus / data.transactions : 0,
+                marge: data.cout > 0 ? (data.benefice / data.cout * 100) : 0
+            })),
+            parArticle: Object.entries(ventesParArticle).map(([article, data]) => ({
+                article: article,
+                quantite: data.quantite,
+                revenus: data.revenus,
+                cout: data.cout,
+                benefice: data.benefice,
+                marge: data.cout > 0 ? (data.benefice / data.cout * 100) : 0,
+                partMarche: ventes.length > 0 ? (data.revenus / ventes.reduce((sum, v) => sum + v.total, 0) * 100) : 0
+            }))
+        };
+        
+        return analyse;
+        
+    } catch (error) {
+        console.error('Erreur analyse revenus:', error);
+        throw error;
+    }
+}
+
+function afficherStatsTable(data, type) {
+    const headers = document.getElementById('statsTableHeaders');
+    const body = document.getElementById('statsTableBody');
+    
+    // Vider les tables existantes
+    headers.innerHTML = '';
+    body.innerHTML = '';
+    
+    if (type === 'sales') {
+        // En-têtes pour les ventes AVEC IMAGES
+        headers.innerHTML = `
+            <th style="width: 80px;">Image</th>
+            <th>Article</th>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Quantité</th>
+            <th>Prix unitaire</th>
+            <th>Total</th>
+            <th>Coût</th>
+            <th>Bénéfice</th>
+            <th>Marge %</th>
+            <th>Vendeur</th>
+        `;
+        
+        // Corps pour les ventes AVEC IMAGES
+        body.innerHTML = data.map(item => {
+            const imageHTML = item.image ? 
+                `<img src="${item.image}" alt="${item.article}" class="article-image-small" 
+                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--light-dark);"
+                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiNlY2YwZjEiLz48cGF0aCBkPSJNMzAgMzVMMjAgMjVIMzBMMzUgMzBINDBMNDUgMjVINTBMMzUgNDBaIiBmaWxsPSIjOTVhNWE2Ii8+PHRleHQgeD0iMzAiIHk9IjM1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM5NWE1YTYiPjx0c3BhbiBkeT0iNCI+Tm8gaW1hZ2U8L3RzcGFuPjwvdGV4dD48L3N2Zz4='">` :
+                `<div class="article-image-placeholder" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: var(--light); border-radius: 4px; border: 1px solid var(--light-dark);">
+                    <i class="fas fa-tshirt" style="font-size: 24px; color: var(--gray);"></i>
+                </div>`;
+            
+            return `
+                <tr>
+                    <td style="padding: 5px; text-align: center;">${imageHTML}</td>
+                    <td>
+                        <div style="font-weight: 600; margin-bottom: 5px;">${item.article}</div>
+                        ${item.description ? `<div style="font-size: 0.8rem; color: var(--gray);">${item.description.substring(0, 50)}${item.description.length > 50 ? '...' : ''}</div>` : ''}
+                    </td>
+                    <td>${item.date}<br><small style="color: var(--gray);">${item.heure || ''}</small></td>
+                    <td><span class="status-badge">${item.type}</span></td>
+                    <td style="text-align: center; font-weight: bold;">${item.quantite}</td>
+                    <td style="text-align: right;">${formatCurrency(item.prixUnitaire)}</td>
+                    <td style="text-align: right; font-weight: bold;">${formatCurrency(item.total)}</td>
+                    <td style="text-align: right;">${formatCurrency(item.coutAchat)}</td>
+                    <td style="text-align: right; font-weight: bold; color: ${item.benefice >= 0 ? 'var(--success)' : 'var(--danger)'};">
+                        ${formatCurrency(item.benefice)}
+                    </td>
+                    <td style="text-align: center;">
+                        <span class="${item.marge >= 0 ? 'text-success' : 'text-danger'}">
+                            ${item.marge.toFixed(2)}%
+                        </span>
+                    </td>
+                    <td>${item.vendeur}</td>
+                </tr>
+            `;
+        }).join('');
+        
+    } else if (type === 'stock') {
+        // En-têtes pour le stock AVEC IMAGES
+        headers.innerHTML = `
+            <th style="width: 80px;">Image</th>
+            <th>Article</th>
+            <th>Type</th>
+            <th>Quantité</th>
+            <th>Prix Achat</th>
+            <th>Prix Vente</th>
+            <th>Valeur</th>
+            <th>Investissement</th>
+            <th>Bénéfice Potentiel</th>
+            <th>Marge %</th>
+            <th>Statut</th>
+        `;
+        
+        // Corps pour le stock AVEC IMAGES
+        body.innerHTML = data.map(item => {
+            const imageHTML = item.image ? 
+                `<img src="${item.image}" alt="${item.article}" class="article-image-small" 
+                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--light-dark);"
+                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIGZpbGw9IiNlY2YwZjEiLz48cGF0aCBkPSJNMzAgMzVMMjAgMjVIMzBMMzUgMzBINDBMNDUgMjVINTBMMzUgNDBaIiBmaWxsPSIjOTVhNWE2Ii8+PHRleHQgeD0iMzAiIHk9IjM1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM5NWE1YTYiPjx0c3BhbiBkeT0iNCI+Tm8gaW1hZ2U8L3RzcGFuPjwvdGV4dD48L3N2Zz4='">` :
+                `<div class="article-image-placeholder" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: var(--light); border-radius: 4px; border: 1px solid var(--light-dark);">
+                    <i class="fas fa-tshirt" style="font-size: 24px; color: var(--gray);"></i>
+                </div>`;
+            
+            const statusClass = item.statut === 'CRITIQUE' ? 'status-danger' : 
+                              item.statut === 'FAIBLE' ? 'status-warning' : 'status-success';
+            
+            return `
+                <tr>
+                    <td style="padding: 5px; text-align: center;">${imageHTML}</td>
+                    <td>
+                        <div style="font-weight: 600; margin-bottom: 5px;">${item.article}</div>
+                        ${item.description ? `<div style="font-size: 0.8rem; color: var(--gray);">${item.description.substring(0, 50)}${item.description.length > 50 ? '...' : ''}</div>` : ''}
+                    </td>
+                    <td><span class="status-badge">${item.type}</span></td>
+                    <td style="text-align: center; font-weight: bold;" class="${item.quantite < 5 ? 'text-danger' : item.quantite < 15 ? 'text-warning' : ''}">
+                        ${item.quantite}
+                    </td>
+                    <td style="text-align: right;">${formatCurrency(item.prixAchat)}</td>
+                    <td style="text-align: right;">${formatCurrency(item.prixVente)}</td>
+                    <td style="text-align: right; font-weight: bold;">${formatCurrency(item.valeur)}</td>
+                    <td style="text-align: right;">${formatCurrency(item.investissement)}</td>
+                    <td style="text-align: right; font-weight: bold; color: ${item.beneficePotentiel >= 0 ? 'var(--success)' : 'var(--danger)'};">
+                        ${formatCurrency(item.beneficePotentiel)}
+                    </td>
+                    <td style="text-align: center;">
+                        <span class="${item.marge >= 0 ? 'text-success' : 'text-danger'}">
+                            ${item.marge.toFixed(2)}%
+                        </span>
+                    </td>
+                    <td><span class="status-badge ${statusClass}">${item.statut}</span></td>
+                </tr>
+            `;
+        }).join('');
+        
+    } else if (type === 'revenue') {
+        // En-têtes pour l'analyse des revenus (quotidienne)
+        headers.innerHTML = `
+            <th>Date</th>
+            <th>Transactions</th>
+            <th>Ventes</th>
+            <th>Revenus</th>
+            <th>Coût</th>
+            <th>Bénéfice</th>
+            <th>Panier Moyen</th>
+            <th>Marge %</th>
+        `;
+        
+        // Corps pour l'analyse des revenus
+        body.innerHTML = data.quotidienne.map(item => {
+            return `
+                <tr>
+                    <td>${item.date}</td>
+                    <td style="text-align: center; font-weight: bold;">${item.transactions}</td>
+                    <td style="text-align: center;">${item.ventes}</td>
+                    <td style="text-align: right; font-weight: bold;">${formatCurrency(item.revenus)}</td>
+                    <td style="text-align: right;">${formatCurrency(item.cout)}</td>
+                    <td style="text-align: right; font-weight: bold; color: ${item.benefice >= 0 ? 'var(--success)' : 'var(--danger)'};">
+                        ${formatCurrency(item.benefice)}
+                    </td>
+                    <td style="text-align: right;">${formatCurrency(item.panierMoyen)}</td>
+                    <td style="text-align: center;">
+                        <span class="${item.marge >= 0 ? 'text-success' : 'text-danger'}">
+                            ${item.marge.toFixed(2)}%
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+}
+
+function afficherStatsSummary(data, type, startDate, endDate) {
+    const summaryContent = document.getElementById('statsSummaryContent');
+    
+    if (type === 'sales') {
+        const totalVentes = data.reduce((sum, item) => sum + item.total, 0);
+        const totalBenefice = data.reduce((sum, item) => sum + item.benefice, 0);
+        const totalCout = data.reduce((sum, item) => sum + item.coutAchat, 0);
+        const totalQuantite = data.reduce((sum, item) => sum + item.quantite, 0);
+        const margeMoyenne = totalCout > 0 ? (totalBenefice / totalCout * 100) : 0;
+        
+        summaryContent.innerHTML = `
+            <div class="grid-3">
+                <div class="stats-card">
+                    <h4><i class="fas fa-money-bill-wave"></i> Revenus totaux</h4>
+                    <div class="stats-value">${formatCurrency(totalVentes)}</div>
+                    <div class="stats-trend">Période: ${startDate} au ${endDate}</div>
+                </div>
+                <div class="stats-card">
+                    <h4><i class="fas fa-chart-line"></i> Bénéfice total</h4>
+                    <div class="stats-value">${formatCurrency(totalBenefice)}</div>
+                    <div class="stats-trend">Marge: ${margeMoyenne.toFixed(2)}%</div>
+                </div>
+                <div class="stats-card">
+                    <h4><i class="fas fa-shopping-cart"></i> Articles vendus</h4>
+                    <div class="stats-value">${totalQuantite}</div>
+                    <div class="stats-trend">${data.length} transactions</div>
+                </div>
+            </div>
+        `;
+        
+    } else if (type === 'stock') {
+        const totalValeur = data.reduce((sum, item) => sum + item.valeur, 0);
+        const totalInvestissement = data.reduce((sum, item) => sum + item.investissement, 0);
+        const totalBeneficePotentiel = data.reduce((sum, item) => sum + item.beneficePotentiel, 0);
+        const totalQuantite = data.reduce((sum, item) => sum + item.quantite, 0);
+        const margeMoyenne = totalInvestissement > 0 ? (totalBeneficePotentiel / totalInvestissement * 100) : 0;
+        
+        // Articles à faible stock
+        const stockFaible = data.filter(item => item.quantite < 15).length;
+        const stockCritique = data.filter(item => item.quantite < 5).length;
+        
+        summaryContent.innerHTML = `
+            <div class="grid-3">
+                <div class="stats-card">
+                    <h4><i class="fas fa-boxes"></i> Valeur du stock</h4>
+                    <div class="stats-value">${formatCurrency(totalValeur)}</div>
+                    <div class="stats-trend">${data.length} articles</div>
+                </div>
+                <div class="stats-card">
+                    <h4><i class="fas fa-chart-line"></i> Bénéfice potentiel</h4>
+                    <div class="stats-value">${formatCurrency(totalBeneficePotentiel)}</div>
+                    <div class="stats-trend">Marge: ${margeMoyenne.toFixed(2)}%</div>
+                </div>
+                <div class="stats-card">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Alertes stock</h4>
+                    <div class="stats-value">${stockFaible}</div>
+                    <div class="stats-trend">${stockCritique} critiques</div>
+                </div>
+            </div>
+        `;
+        
+    } else if (type === 'revenue') {
+        const revenusTotaux = data.quotidienne.reduce((sum, item) => sum + item.revenus, 0);
+        const beneficeTotal = data.quotidienne.reduce((sum, item) => sum + item.benefice, 0);
+        const transactionsTotales = data.quotidienne.reduce((sum, item) => sum + item.transactions, 0);
+        const panierMoyenGlobal = transactionsTotales > 0 ? revenusTotaux / transactionsTotales : 0;
+        
+        // Meilleur jour
+        const meilleurJour = data.quotidienne.reduce((max, item) => 
+            item.revenus > max.revenus ? item : max, { revenus: 0, date: '' });
+        
+        summaryContent.innerHTML = `
+            <div class="grid-3">
+                <div class="stats-card">
+                    <h4><i class="fas fa-money-bill-wave"></i> Revenus totaux</h4>
+                    <div class="stats-value">${formatCurrency(revenusTotaux)}</div>
+                    <div class="stats-trend">${data.quotidienne.length} jours</div>
+                </div>
+                <div class="stats-card">
+                    <h4><i class="fas fa-shopping-cart"></i> Panier moyen</h4>
+                    <div class="stats-value">${formatCurrency(panierMoyenGlobal)}</div>
+                    <div class="stats-trend">${transactionsTotales} transactions</div>
+                </div>
+                <div class="stats-card">
+                    <h4><i class="fas fa-trophy"></i> Meilleur jour</h4>
+                    <div class="stats-value">${formatCurrency(meilleurJour.revenus)}</div>
+                    <div class="stats-trend">${meilleurJour.date}</div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function genererGraphique(data, type) {
+    const ctx = document.getElementById('statsChart').getContext('2d');
+    
+    // Détruire le graphique existant
+    if (statsChart) {
+        statsChart.destroy();
+    }
+    
+    if (type === 'sales') {
+        // Graphique pour les ventes : ventes par jour
+        const ventesParJour = {};
+        data.forEach(item => {
+            if (!ventesParJour[item.date]) {
+                ventesParJour[item.date] = 0;
+            }
+            ventesParJour[item.date] += item.total;
+        });
+        
+        const jours = Object.keys(ventesParJour);
+        const montants = Object.values(ventesParJour);
+        
+        statsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: jours,
+                datasets: [{
+                    label: 'Revenus par jour (FC)',
+                    data: montants,
+                    backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Évolution des revenus par jour'
+                    },
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+    } else if (type === 'stock') {
+        // Graphique pour le stock : répartition par type
+        const repartitionParType = {};
+        data.forEach(item => {
+            if (!repartitionParType[item.type]) {
+                repartitionParType[item.type] = 0;
+            }
+            repartitionParType[item.type] += item.valeur;
+        });
+        
+        const types = Object.keys(repartitionParType);
+        const valeurs = Object.values(repartitionParType);
+        const couleurs = generateColors(types.length);
+        
+        statsChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: types,
+                datasets: [{
+                    label: 'Valeur du stock par type',
+                    data: valeurs,
+                    backgroundColor: couleurs,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Répartition du stock par type'
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Ajouter la légende
+        const legendContainer = document.createElement('div');
+        legendContainer.className = 'chart-legend';
+        types.forEach((type, index) => {
+            const legendItem = document.createElement('div');
+            legendItem.className = 'legend-item';
+            legendItem.innerHTML = `
+                <div class="legend-color" style="background-color: ${couleurs[index]};"></div>
+                <span>${type}</span>
+                <span style="margin-left: auto; font-weight: bold;">${formatCurrency(valeurs[index])}</span>
+            `;
+            legendContainer.appendChild(legendItem);
+        });
+        
+        // Ajouter après le canvas
+        const canvasContainer = document.querySelector('.canvas-container');
+        const existingLegend = canvasContainer.querySelector('.chart-legend');
+        if (existingLegend) {
+            existingLegend.remove();
+        }
+        canvasContainer.appendChild(legendContainer);
+        
+    } else if (type === 'revenue') {
+        // Graphique pour les revenus : bénéfice par jour
+        const beneficesParJour = {};
+        data.quotidienne.forEach(item => {
+            beneficesParJour[item.date] = item.benefice;
+        });
+        
+        const jours = Object.keys(beneficesParJour);
+        const benefices = Object.values(beneficesParJour);
+        
+        // Couleurs selon le bénéfice
+        const backgroundColors = benefices.map(b => 
+            b >= 0 ? 'rgba(46, 204, 113, 0.2)' : 'rgba(231, 76, 60, 0.2)'
+        );
+        const borderColors = benefices.map(b => 
+            b >= 0 ? 'rgba(46, 204, 113, 1)' : 'rgba(231, 76, 60, 1)'
+        );
+        
+        statsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: jours,
+                datasets: [{
+                    label: 'Bénéfice par jour (FC)',
+                    data: benefices,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Bénéfice quotidien'
+                    },
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function generateColors(count) {
+    const colors = [
+        '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6',
+        '#1abc9c', '#d35400', '#c0392b', '#16a085', '#8e44ad',
+        '#2c3e50', '#f1c40f', '#e67e22', '#7f8c8d', '#34495e'
+    ];
+    
+    if (count <= colors.length) {
+        return colors.slice(0, count);
+    }
+    
+    // Générer des couleurs si on en a besoin plus
+    const generatedColors = [];
+    for (let i = 0; i < count; i++) {
+        const hue = (i * 137.508) % 360; // Utiliser l'angle d'or
+        generatedColors.push(`hsl(${hue}, 70%, 65%)`);
+    }
+    return generatedColors;
+}
+
+function afficherStatsAvancees(data, type) {
+    const advancedStatsContent = document.getElementById('advancedStatsContent');
+    
+    if (type === 'sales') {
+        // Calculs avancés pour les ventes AVEC IMAGES
+        const top5Articles = [...data]
+            .sort((a, b) => b.quantite - a.quantite)
+            .slice(0, 5);
+        
+        const top5Revenus = [...data]
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 5);
+        
+        const meilleursVendeurs = {};
+        data.forEach(item => {
+            if (!meilleursVendeurs[item.vendeur]) {
+                meilleursVendeurs[item.vendeur] = {
+                    total: 0,
+                    transactions: 0,
+                    articles: new Set()
+                };
+            }
+            meilleursVendeurs[item.vendeur].total += item.total;
+            meilleursVendeurs[item.vendeur].transactions += 1;
+            meilleursVendeurs[item.vendeur].articles.add(item.article);
+        });
+        
+        const top3Vendeurs = Object.entries(meilleursVendeurs)
+            .sort((a, b) => b[1].total - a[1].total)
+            .slice(0, 3);
+        
+        // Articles par type
+        const articlesParType = {};
+        data.forEach(item => {
+            if (!articlesParType[item.type]) {
+                articlesParType[item.type] = {
+                    quantite: 0,
+                    total: 0,
+                    benefice: 0
+                };
+            }
+            articlesParType[item.type].quantite += item.quantite;
+            articlesParType[item.type].total += item.total;
+            articlesParType[item.type].benefice += item.benefice;
+        });
+        
+        const meilleursTypes = Object.entries(articlesParType)
+            .sort((a, b) => b[1].total - a[1].total)
+            .slice(0, 3);
+        
+        advancedStatsContent.innerHTML = `
+            <div class="stats-card">
+                <h4><i class="fas fa-medal"></i> Top 5 articles (ventes)</h4>
+                <div style="margin-top: 15px;">
+                    ${top5Articles.map((item, index) => {
+                        const imageHTML = item.image ? 
+                            `<img src="${item.image}" alt="${item.article}" 
+                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--light-dark); margin-right: 10px;"
+                                 onerror="this.style.display='none'">` :
+                            `<div style="width: 40px; height: 40px; background: var(--light); border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-right: 10px; color: var(--gray);">
+                                <i class="fas fa-tshirt"></i>
+                            </div>`;
+                        
+                        const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32', '#3498db', '#2ecc71'];
+                        const medalColor = medalColors[index] || '#95a5a6';
+                        
+                        return `
+                            <div style="display: flex; align-items: center; margin-bottom: 10px; padding: 8px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid ${medalColor};">
+                                <span style="font-weight: bold; margin-right: 10px; color: ${medalColor}; min-width: 20px; text-align: center;">${index + 1}</span>
+                                ${imageHTML}
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 2px;">${item.article}</div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                                        <span style="color: #666;">${item.quantite} unités</span>
+                                        <span style="color: var(--primary); font-weight: bold;">${formatCurrency(item.total)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4><i class="fas fa-money-bill-wave"></i> Top 5 articles (revenus)</h4>
+                <div style="margin-top: 15px;">
+                    ${top5Revenus.map((item, index) => {
+                        const imageHTML = item.image ? 
+                            `<img src="${item.image}" alt="${item.article}" 
+                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--light-dark); margin-right: 10px;"
+                                 onerror="this.style.display='none'">` :
+                            `<div style="width: 40px; height: 40px; background: var(--light); border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-right: 10px; color: var(--gray);">
+                                <i class="fas fa-tshirt"></i>
+                            </div>`;
+                        
+                        const margeColor = item.marge > 30 ? 'var(--success)' : 
+                                         item.marge > 10 ? 'var(--warning)' : 'var(--danger)';
+                        
+                        return `
+                            <div style="display: flex; align-items: center; margin-bottom: 10px; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                                <span style="font-weight: bold; margin-right: 10px; color: var(--success); min-width: 20px; text-align: center;">${index + 1}</span>
+                                ${imageHTML}
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 2px;">${item.article}</div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                                        <span style="color: #666;">${formatCurrency(item.total)}</span>
+                                        <span style="color: ${margeColor}; font-weight: bold;">${item.marge.toFixed(1)}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4><i class="fas fa-user-tie"></i> Top 3 vendeurs</h4>
+                <div style="margin-top: 15px;">
+                    ${top3Vendeurs.map(([vendeur, stats], index) => {
+                        const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
+                        const articlesCount = stats.articles.size;
+                        
+                        return `
+                            <div style="margin-bottom: 10px; padding: 12px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid ${medalColors[index]};">
+                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                    <div style="width: 30px; height: 30px; background: ${medalColors[index]}; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px; color: white; font-weight: bold; font-size: 0.9rem;">
+                                        ${index + 1}
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; font-size: 1rem;">${vendeur}</div>
+                                        <div style="font-size: 0.8rem; color: #666;">
+                                            ${stats.transactions} transactions • ${articlesCount} articles
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="text-align: center; padding-top: 8px; border-top: 1px dashed #ddd;">
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">
+                                        ${formatCurrency(stats.total)}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: #666;">Chiffre d'affaires</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                    
+                    ${meilleursTypes.length > 0 ? `
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                            <h5 style="margin: 0 0 10px 0; color: var(--secondary); font-size: 0.9rem;">
+                                <i class="fas fa-tags"></i> Catégories populaires
+                            </h5>
+                            ${meilleursTypes.map(([type, stats]) => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 5px 0;">
+                                    <span style="font-weight: 600; font-size: 0.9rem;">${type}</span>
+                                    <div style="text-align: right;">
+                                        <div style="font-weight: bold; color: var(--primary);">${formatCurrency(stats.total)}</div>
+                                        <div style="font-size: 0.8rem; color: #666;">${stats.quantite} ventes</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+        
+    } else if (type === 'stock') {
+        // Calculs avancés pour le stock AVEC IMAGES
+        const articlesRentables = [...data]
+            .filter(item => item.marge > 20)
+            .sort((a, b) => b.marge - a.marge)
+            .slice(0, 5);
+        
+        const articlesFaibleStock = [...data]
+            .filter(item => item.quantite < 15)
+            .sort((a, b) => a.quantite - b.quantite)
+            .slice(0, 5);
+        
+        const articlesValeur = [...data]
+            .sort((a, b) => b.valeur - a.valeur)
+            .slice(0, 5);
+        
+        // Analyse par type
+        const stockParType = {};
+        data.forEach(item => {
+            if (!stockParType[item.type]) {
+                stockParType[item.type] = {
+                    quantite: 0,
+                    valeur: 0,
+                    articles: 0,
+                    faibleStock: 0
+                };
+            }
+            stockParType[item.type].quantite += item.quantite;
+            stockParType[item.type].valeur += item.valeur;
+            stockParType[item.type].articles += 1;
+            if (item.quantite < 15) {
+                stockParType[item.type].faibleStock += 1;
+            }
+        });
+        
+        const typesTendance = Object.entries(stockParType)
+            .sort((a, b) => b[1].valeur - a[1].valeur)
+            .slice(0, 3);
+        
+        advancedStatsContent.innerHTML = `
+            <div class="stats-card">
+                <h4><i class="fas fa-chart-line"></i> Top 5 marges</h4>
+                <div style="margin-top: 15px;">
+                    ${articlesRentables.map((item, index) => {
+                        const imageHTML = item.image ? 
+                            `<img src="${item.image}" alt="${item.article}" 
+                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--light-dark); margin-right: 10px;"
+                                 onerror="this.style.display='none'">` :
+                            `<div style="width: 40px; height: 40px; background: var(--light); border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-right: 10px; color: var(--gray);">
+                                <i class="fas fa-tshirt"></i>
+                            </div>`;
+                        
+                        const margeColor = item.marge > 50 ? 'var(--success)' : 
+                                         item.marge > 30 ? '#27ae60' : 
+                                         item.marge > 20 ? '#f39c12' : '#e74c3c';
+                        
+                        return `
+                            <div style="display: flex; align-items: center; margin-bottom: 10px; padding: 8px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid ${margeColor};">
+                                <span style="font-weight: bold; margin-right: 10px; color: ${margeColor}; min-width: 20px; text-align: center;">${index + 1}</span>
+                                ${imageHTML}
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 2px;">${item.article}</div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                                        <span style="color: #666;">${item.type}</span>
+                                        <span style="color: ${margeColor}; font-weight: bold;">${item.marge.toFixed(1)}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4><i class="fas fa-exclamation-triangle"></i> Stock faible</h4>
+                <div style="margin-top: 15px;">
+                    ${articlesFaibleStock.map((item, index) => {
+                        const imageHTML = item.image ? 
+                            `<img src="${item.image}" alt="${item.article}" 
+                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--light-dark); margin-right: 10px;"
+                                 onerror="this.style.display='none'">` :
+                            `<div style="width: 40px; height: 40px; background: var(--light); border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-right: 10px; color: var(--gray);">
+                                <i class="fas fa-tshirt"></i>
+                            </div>`;
+                        
+                        const quantiteColor = item.quantite < 5 ? '#e74c3c' : 
+                                            item.quantite < 10 ? '#f39c12' : '#f1c40f';
+                        const statutText = item.quantite < 5 ? 'CRITIQUE' : 
+                                         item.quantite < 10 ? 'FAIBLE' : 'MOYEN';
+                        
+                        return `
+                            <div style="display: flex; align-items: center; margin-bottom: 10px; padding: 8px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid ${quantiteColor};">
+                                <span style="font-weight: bold; margin-right: 10px; color: ${quantiteColor}; min-width: 20px; text-align: center;">${index + 1}</span>
+                                ${imageHTML}
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 2px;">${item.article}</div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                                        <span style="color: #666;">${item.type}</span>
+                                        <div>
+                                            <span style="color: ${quantiteColor}; font-weight: bold; margin-right: 5px;">
+                                                ${item.quantite} unités
+                                            </span>
+                                            <span style="background: ${quantiteColor}; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: bold;">
+                                                ${statutText}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                    
+                    ${typesTendance.length > 0 ? `
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                            <h5 style="margin: 0 0 10px 0; color: var(--secondary); font-size: 0.9rem;">
+                                <i class="fas fa-chart-pie"></i> Stock par type
+                            </h5>
+                            ${typesTendance.map(([type, stats]) => {
+                                const pourcentageFaible = stats.articles > 0 ? 
+                                    (stats.faibleStock / stats.articles * 100).toFixed(1) : 0;
+                                
+                                return `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 5px 0;">
+                                        <div>
+                                            <div style="font-weight: 600; font-size: 0.9rem;">${type}</div>
+                                            <div style="font-size: 0.8rem; color: #666;">
+                                                ${stats.articles} articles • ${pourcentageFaible}% faible
+                                            </div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div style="font-weight: bold; color: var(--primary);">${formatCurrency(stats.valeur)}</div>
+                                            <div style="font-size: 0.8rem; color: #666;">${stats.quantite} unités</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4><i class="fas fa-gem"></i> Articles de valeur</h4>
+                <div style="margin-top: 15px;">
+                    ${articlesValeur.map((item, index) => {
+                        const imageHTML = item.image ? 
+                            `<img src="${item.image}" alt="${item.article}" 
+                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid var(--light-dark); margin-right: 10px;"
+                                 onerror="this.style.display='none'">` :
+                            `<div style="width: 40px; height: 40px; background: var(--light); border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-right: 10px; color: var(--gray);">
+                                <i class="fas fa-tshirt"></i>
+                            </div>`;
+                        
+                        const valeurParUnite = item.quantite > 0 ? item.valeur / item.quantite : 0;
+                        
+                        return `
+                            <div style="display: flex; align-items: center; margin-bottom: 10px; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                                <span style="font-weight: bold; margin-right: 10px; color: var(--primary); min-width: 20px; text-align: center;">${index + 1}</span>
+                                ${imageHTML}
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 2px;">${item.article}</div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                                        <div>
+                                            <div style="color: #666;">${item.type}</div>
+                                            <div style="color: #666; font-size: 0.75rem;">
+                                                ${item.quantite} × ${formatCurrency(valeurParUnite)}
+                                            </div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div style="font-weight: bold; color: var(--primary); font-size: 1rem;">
+                                                ${formatCurrency(item.valeur)}
+                                            </div>
+                                            <div style="color: #666; font-size: 0.75rem;">
+                                                Valeur totale
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                    
+                    <div style="margin-top: 15px; padding: 10px; background: linear-gradient(135deg, var(--primary-light), var(--info-light)); border-radius: 4px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: bold; color: var(--primary);">Valeur totale du stock</div>
+                                <div style="font-size: 0.8rem; color: var(--gray-dark);">${data.length} articles analysés</div>
+                            </div>
+                            <div style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">
+                                ${formatCurrency(data.reduce((sum, item) => sum + item.valeur, 0))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+    } else if (type === 'revenue') {
+        // Calculs avancés pour l'analyse des revenus
+        const meilleursArticles = [...data.parArticle]
+            .sort((a, b) => b.revenus - a.revenus)
+            .slice(0, 5);
+        
+        const meilleuresMarges = [...data.parArticle]
+            .filter(item => item.cout > 0)
+            .sort((a, b) => b.marge - a.marge)
+            .slice(0, 5);
+        
+        const joursSemaine = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+        const revenusParJour = {};
+        data.quotidienne.forEach(item => {
+            const date = new Date(item.date.split('/').reverse().join('-'));
+            const jour = joursSemaine[date.getDay()];
+            if (!revenusParJour[jour]) {
+                revenusParJour[jour] = { 
+                    total: 0, 
+                    count: 0,
+                    transactions: 0,
+                    benefice: 0 
+                };
+            }
+            revenusParJour[jour].total += item.revenus;
+            revenusParJour[jour].count += 1;
+            revenusParJour[jour].transactions += item.transactions;
+            revenusParJour[jour].benefice += item.benefice;
+        });
+        
+        const meilleursJours = Object.entries(revenusParJour)
+            .map(([jour, stats]) => ({
+                jour,
+                moyenne: stats.total / stats.count,
+                transactionsMoyenne: stats.transactions / stats.count,
+                beneficeMoyen: stats.benefice / stats.count
+            }))
+            .sort((a, b) => b.moyenne - a.moyenne)
+            .slice(0, 3);
+        
+        // Tendances (meilleur jour vs pire jour)
+        const meilleurJourPerf = data.quotidienne.reduce((max, item) => 
+            item.revenus > max.revenus ? item : max, { revenus: 0, date: '' });
+        
+        const pireJourPerf = data.quotidienne.reduce((min, item) => 
+            item.revenus < min.revenus ? item : min, { revenus: Infinity, date: '' });
+        
+        advancedStatsContent.innerHTML = `
+            <div class="stats-card">
+                <h4><i class="fas fa-chart-bar"></i> Top 5 revenus articles</h4>
+                <div style="margin-top: 15px;">
+                    ${meilleursArticles.map((item, index) => {
+                        const partMarcheColor = item.partMarche > 20 ? 'var(--success)' : 
+                                              item.partMarche > 10 ? 'var(--warning)' : 'var(--gray)';
+                        
+                        return `
+                            <div style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid var(--primary);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                    <div style="display: flex; align-items: center;">
+                                        <span style="font-weight: bold; margin-right: 10px; color: var(--primary); min-width: 20px; text-align: center;">${index + 1}</span>
+                                        <div style="font-weight: 600; font-size: 0.9rem;">${item.article}</div>
+                                    </div>
+                                    <span style="background: ${partMarcheColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">
+                                        ${item.partMarche.toFixed(1)}%
+                                    </span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                                    <div>
+                                        <div style="color: #666;">${item.quantite} unités vendues</div>
+                                        <div style="color: var(--success); font-weight: bold;">${formatCurrency(item.benefice)} bénéfice</div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-weight: bold; color: var(--primary);">${formatCurrency(item.revenus)}</div>
+                                        <div style="color: #666; font-size: 0.8rem;">${item.marge.toFixed(1)}% marge</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4><i class="fas fa-percentage"></i> Top 5 marges articles</h4>
+                <div style="margin-top: 15px;">
+                    ${meilleuresMarges.map((item, index) => {
+                        const margeColor = item.marge > 50 ? 'var(--success)' : 
+                                         item.marge > 30 ? '#27ae60' : 
+                                         item.marge > 20 ? '#f39c12' : '#e74c3c';
+                        
+                        return `
+                            <div style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid ${margeColor};">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                    <div style="display: flex; align-items: center;">
+                                        <span style="font-weight: bold; margin-right: 10px; color: ${margeColor}; min-width: 20px; text-align: center;">${index + 1}</span>
+                                        <div style="font-weight: 600; font-size: 0.9rem;">${item.article}</div>
+                                    </div>
+                                    <span style="background: ${margeColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">
+                                        ${item.marge.toFixed(1)}%
+                                    </span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                                    <div>
+                                        <div style="color: #666;">${item.quantite} unités</div>
+                                        <div style="color: ${margeColor}; font-weight: bold;">${formatCurrency(item.benefice)} bénéfice</div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-weight: bold; color: var(--primary);">${formatCurrency(item.revenus)}</div>
+                                        <div style="color: #666; font-size: 0.8rem;">CA</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <h4><i class="fas fa-calendar-day"></i> Analyse par jour</h4>
+                <div style="margin-top: 15px;">
+                    ${meilleursJours.map((item, index) => {
+                        const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
+                        
+                        return `
+                            <div style="margin-bottom: 15px; padding: 12px; background: #f8f9fa; border-radius: 4px; border-left: 4px solid ${medalColors[index]};">
+                                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                                    <div style="width: 30px; height: 30px; background: ${medalColors[index]}; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px; color: white; font-weight: bold;">
+                                        ${index + 1}
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; font-size: 1rem;">${item.jour}</div>
+                                        <div style="font-size: 0.8rem; color: #666;">
+                                            ${item.transactionsMoyenne.toFixed(1)} transactions moyennes
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center;">
+                                    <div>
+                                        <div style="font-size: 1.1rem; font-weight: bold; color: var(--primary);">
+                                            ${formatCurrency(item.moyenne)}
+                                        </div>
+                                        <div style="font-size: 0.8rem; color: #666;">CA moyen</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 1.1rem; font-weight: bold; color: var(--success);">
+                                            ${formatCurrency(item.beneficeMoyen)}
+                                        </div>
+                                        <div style="font-size: 0.8rem; color: #666;">Bénéfice moyen</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                    
+                    <div style="margin-top: 15px; padding: 15px; background: linear-gradient(135deg, var(--info-light), var(--primary-light)); border-radius: 4px;">
+                        <div style="text-align: center; margin-bottom: 10px;">
+                            <div style="font-weight: bold; color: var(--primary); margin-bottom: 5px;">🎯 Performance extrême</div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div style="background: rgba(46, 204, 113, 0.1); padding: 10px; border-radius: 4px; border: 1px solid var(--success);">
+                                <div style="font-weight: bold; color: var(--success); font-size: 0.9rem;">Meilleur jour</div>
+                                <div style="font-size: 1rem; font-weight: bold;">${formatCurrency(meilleurJourPerf.revenus)}</div>
+                                <div style="font-size: 0.8rem; color: #666;">${meilleurJourPerf.date}</div>
+                            </div>
+                            <div style="background: rgba(231, 76, 60, 0.1); padding: 10px; border-radius: 4px; border: 1px solid var(--danger);">
+                                <div style="font-weight: bold; color: var(--danger); font-size: 0.9rem;">Plus bas</div>
+                                <div style="font-size: 1rem; font-weight: bold;">${formatCurrency(pireJourPerf.revenus)}</div>
+                                <div style="font-size: 0.8rem; color: #666;">${pireJourPerf.date}</div>
+                            </div>
+                        </div>
+                        ${meilleurJourPerf.revenus > 0 && pireJourPerf.revenus > 0 ? `
+                            <div style="margin-top: 10px; text-align: center; font-size: 0.85rem; color: var(--gray-dark);">
+                                Écart: ${formatCurrency(meilleurJourPerf.revenus - pireJourPerf.revenus)} 
+                                (${((meilleurJourPerf.revenus / pireJourPerf.revenus - 1) * 100).toFixed(0)}%)
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+async function exporterRapportPDF() {
+    if (!currentStatsData || !statsPeriod) {
+        showAlert('❌ Aucune donnée à exporter', 'warning');
+        return;
+    }
+    
+    try {
+        showLoading(true, 'Génération du PDF...');
+        
+        const doc = new jsPDF('landscape');
+        const type = statsPeriod.type;
+        const start = statsPeriod.start;
+        const end = statsPeriod.end;
+        const category = statsPeriod.category || 'Toutes catégories';
+        
+        // En-tête
+        doc.setFontSize(24);
+        doc.setTextColor(52, 152, 219);
+        doc.text("📊 RAPPORT DÉTAILLÉ - TheoVêt", 148, 20, { align: "center" });
+        
+        doc.setFontSize(12);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Période: ${start} au ${end} | Catégorie: ${category}`, 148, 30, { align: "center" });
+        doc.text(`Type: ${getTypeName(type)} | Généré par: ${userData.name}`, 148, 36, { align: "center" });
+        
+        // Résumé
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.text("📈 RÉSUMÉ", 20, 50);
+        
+        doc.setFontSize(10);
+        doc.text(`Date de génération: ${new Date().toLocaleString('fr-FR')}`, 20, 58);
+        doc.text(`Nombre d'entrées: ${getDataCount(currentStatsData, type)}`, 20, 64);
+        
+        // Tableau principal
+        let startY = 75;
+        
+        if (type === 'sales') {
+            const tableData = currentStatsData.map(item => [
+                item.date,
+                item.article.substring(0, 20),
+                item.type,
+                item.quantite.toString(),
+                formatCurrency(item.prixUnitaire),
+                formatCurrency(item.total),
+                formatCurrency(item.benefice),
+                `${item.marge.toFixed(1)}%`
+            ]);
+            
+            doc.autoTable({
+                startY: startY,
+                head: [['Date', 'Article', 'Type', 'Qty', 'Prix Unit', 'Total', 'Bénéfice', 'Marge']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [52, 152, 219], 
+                    textColor: 255, 
+                    fontStyle: 'bold',
+                    fontSize: 9
+                },
+                styles: { 
+                    fontSize: 8,
+                    cellPadding: 3
+                },
+                columnStyles: {
+                    0: { cellWidth: 20 },
+                    1: { cellWidth: 35 },
+                    2: { cellWidth: 25 },
+                    3: { cellWidth: 15 },
+                    4: { cellWidth: 25 },
+                    5: { cellWidth: 25 },
+                    6: { cellWidth: 25 },
+                    7: { cellWidth: 20 }
+                }
+            });
+            
+        } else if (type === 'stock') {
+            const tableData = currentStatsData.map(item => [
+                item.article.substring(0, 20),
+                item.type,
+                item.quantite.toString(),
+                formatCurrency(item.prixAchat),
+                formatCurrency(item.prixVente),
+                formatCurrency(item.valeur),
+                formatCurrency(item.beneficePotentiel),
+                `${item.marge.toFixed(1)}%`
+            ]);
+            
+            doc.autoTable({
+                startY: startY,
+                head: [['Article', 'Type', 'Qty', 'Prix Achat', 'Prix Vente', 'Valeur', 'Bénéfice Pot.', 'Marge']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [46, 204, 113], 
+                    textColor: 255, 
+                    fontStyle: 'bold',
+                    fontSize: 9
+                },
+                styles: { 
+                    fontSize: 8,
+                    cellPadding: 3
+                }
+            });
+            
+        } else if (type === 'revenue') {
+            const tableData = currentStatsData.quotidienne.map(item => [
+                item.date,
+                item.transactions.toString(),
+                item.ventes.toString(),
+                formatCurrency(item.revenus),
+                formatCurrency(item.cout),
+                formatCurrency(item.benefice),
+                formatCurrency(item.panierMoyen),
+                `${item.marge.toFixed(1)}%`
+            ]);
+            
+            doc.autoTable({
+                startY: startY,
+                head: [['Date', 'Trans.', 'Ventes', 'Revenus', 'Coût', 'Bénéfice', 'Panier Moyen', 'Marge']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [155, 89, 182], 
+                    textColor: 255, 
+                    fontStyle: 'bold',
+                    fontSize: 9
+                },
+                styles: { 
+                    fontSize: 8,
+                    cellPadding: 3
+                }
+            });
+        }
+        
+        // Statistiques de synthèse
+        const finalY = doc.lastAutoTable.finalY + 15;
+        
+        doc.setFontSize(12);
+        doc.setTextColor(52, 152, 219);
+        doc.text("📊 SYNTHÈSE", 20, finalY);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        
+        const stats = getStatsSummary(currentStatsData, type);
+        stats.forEach((stat, index) => {
+            doc.text(stat, 20, finalY + 10 + (index * 6));
+        });
+        
+        // Pied de page
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text("TheoVêt - Système de gestion avancé", 148, 190, { align: "center" });
+        doc.text("www.theovet.com | contact@theovet.com", 148, 195, { align: "center" });
+        
+        const fileName = `rapport_${type}_${start}_${end}.pdf`.replace(/\//g, '-');
+        doc.save(fileName);
+        
+        showAlert(`✅ Rapport PDF exporté: ${fileName}`, 'success');
+        
+    } catch (error) {
+        console.error('Erreur export PDF:', error);
+        showAlert('❌ Erreur lors de l\'export PDF', 'danger');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function exporterRapportExcel() {
+    if (!currentStatsData || !statsPeriod) {
+        showAlert('❌ Aucune donnée à exporter', 'warning');
+        return;
+    }
+    
+    try {
+        showLoading(true, 'Génération du fichier Excel...');
+        
+        const type = statsPeriod.type;
+        const start = statsPeriod.start;
+        const end = statsPeriod.end;
+        const category = statsPeriod.category || 'Toutes catégories';
+        
+        // Créer le workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Feuille de données principales
+        let ws_data = [];
+        
+        // En-tête du rapport
+        ws_data.push(['RAPPORT DÉTAILLÉ - TheoVêt']);
+        ws_data.push([`Période: ${start} au ${end}`]);
+        ws_data.push([`Catégorie: ${category}`]);
+        ws_data.push([`Type: ${getTypeName(type)}`]);
+        ws_data.push([`Généré par: ${userData.name}`]);
+        ws_data.push([`Date de génération: ${new Date().toLocaleString('fr-FR')}`]);
+        ws_data.push([]); // Ligne vide
+        
+        if (type === 'sales') {
+            ws_data.push(['Date', 'Article', 'Type', 'Quantité', 'Prix Unitaire', 'Total', 'Coût', 'Bénéfice', 'Marge %', 'Vendeur']);
+            
+            currentStatsData.forEach(item => {
+                ws_data.push([
+                    item.date,
+                    item.article,
+                    item.type,
+                    item.quantite,
+                    item.prixUnitaire,
+                    item.total,
+                    item.coutAchat,
+                    item.benefice,
+                    item.marge.toFixed(2) + '%',
+                    item.vendeur
+                ]);
+            });
+            
+        } else if (type === 'stock') {
+            ws_data.push(['Article', 'Type', 'Quantité', 'Prix Achat', 'Prix Vente', 'Valeur', 'Investissement', 'Bénéfice Potentiel', 'Marge %', 'Statut']);
+            
+            currentStatsData.forEach(item => {
+                ws_data.push([
+                    item.article,
+                    item.type,
+                    item.quantite,
+                    item.prixAchat,
+                    item.prixVente,
+                    item.valeur,
+                    item.investissement,
+                    item.beneficePotentiel,
+                    item.marge.toFixed(2) + '%',
+                    item.statut
+                ]);
+            });
+            
+        } else if (type === 'revenue') {
+            ws_data.push(['Date', 'Transactions', 'Ventes', 'Revenus', 'Coût', 'Bénéfice', 'Panier Moyen', 'Marge %']);
+            
+            currentStatsData.quotidienne.forEach(item => {
+                ws_data.push([
+                    item.date,
+                    item.transactions,
+                    item.ventes,
+                    item.revenus,
+                    item.cout,
+                    item.benefice,
+                    item.panierMoyen,
+                    item.marge.toFixed(2) + '%'
+                ]);
+            });
+        }
+        
+        // Ajouter les totaux
+        ws_data.push([]);
+        ws_data.push(['STATISTIQUES DE SYNTHÈSE']);
+        
+        const stats = getStatsSummary(currentStatsData, type);
+        stats.forEach(stat => {
+            ws_data.push([stat]);
+        });
+        
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        
+        // Ajuster la largeur des colonnes
+        const colWidths = [];
+        for (let i = 0; i < ws_data[7].length; i++) {
+            colWidths.push({ wch: 20 });
+        }
+        ws['!cols'] = colWidths;
+        
+        XLSX.utils.book_append_sheet(wb, ws, 'Rapport');
+        
+        // Générer et télécharger
+        const fileName = `rapport_${type}_${start}_${end}.xlsx`.replace(/\//g, '-');
+        XLSX.writeFile(wb, fileName);
+        
+        showAlert(`✅ Rapport Excel exporté: ${fileName}`, 'success');
+        
+    } catch (error) {
+        console.error('Erreur export Excel:', error);
+        showAlert('❌ Erreur lors de l\'export Excel', 'danger');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function imprimerRapport() {
+    if (!currentStatsData || !statsPeriod) {
+        showAlert('❌ Aucune donnée à imprimer', 'warning');
+        return;
+    }
+    
+    // Créer une fenêtre d'impression
+    const printWindow = window.open('', '_blank');
+    
+    const type = statsPeriod.type;
+    const start = statsPeriod.start;
+    const end = statsPeriod.end;
+    const category = statsPeriod.category || 'Toutes catégories';
+    
+    let content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Rapport TheoVêt - ${start} au ${end}</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                    border-bottom: 2px solid #3498db;
+                    padding-bottom: 20px;
+                }
+                .header h1 {
+                    color: #3498db;
+                    margin: 0;
+                }
+                .info {
+                    color: #666;
+                    font-size: 14px;
+                    margin: 5px 0;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 20px 0;
+                }
+                th {
+                    background: #3498db;
+                    color: white;
+                    padding: 10px;
+                    text-align: left;
+                    font-weight: bold;
+                }
+                td {
+                    padding: 8px;
+                    border-bottom: 1px solid #ddd;
+                }
+                tr:nth-child(even) {
+                    background: #f8f9fa;
+                }
+                .summary {
+                    margin-top: 30px;
+                    padding: 20px;
+                    background: #f8f9fa;
+                    border-radius: 5px;
+                }
+                .summary h3 {
+                    color: #2c3e50;
+                    margin-top: 0;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 40px;
+                    color: #95a5a6;
+                    font-size: 12px;
+                }
+                @media print {
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>📊 RAPPORT DÉTAILLÉ - TheoVêt</h1>
+                <div class="info">Période: ${start} au ${end}</div>
+                <div class="info">Catégorie: ${category}</div>
+                <div class="info">Type: ${getTypeName(type)}</div>
+                <div class="info">Généré par: ${userData.name}</div>
+                <div class="info">Date de génération: ${new Date().toLocaleString('fr-FR')}</div>
+            </div>
+    `;
+    
+    if (type === 'sales') {
+        content += `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Article</th>
+                        <th>Type</th>
+                        <th>Quantité</th>
+                        <th>Prix Unitaire</th>
+                        <th>Total</th>
+                        <th>Coût</th>
+                        <th>Bénéfice</th>
+                        <th>Marge %</th>
+                        <th>Vendeur</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        currentStatsData.forEach(item => {
+            content += `
+                <tr>
+                    <td>${item.date}</td>
+                    <td>${item.article}</td>
+                    <td>${item.type}</td>
+                    <td>${item.quantite}</td>
+                    <td>${formatCurrency(item.prixUnitaire)}</td>
+                    <td>${formatCurrency(item.total)}</td>
+                    <td>${formatCurrency(item.coutAchat)}</td>
+                    <td style="color: ${item.benefice >= 0 ? '#27ae60' : '#e74c3c'}">
+                        ${formatCurrency(item.benefice)}
+                    </td>
+                    <td>${item.marge.toFixed(2)}%</td>
+                    <td>${item.vendeur}</td>
+                </tr>
+            `;
+        });
+        
+        content += `
+                </tbody>
+            </table>
+        `;
+        
+    } else if (type === 'stock') {
+        content += `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th>Type</th>
+                        <th>Quantité</th>
+                        <th>Prix Achat</th>
+                        <th>Prix Vente</th>
+                        <th>Valeur</th>
+                        <th>Investissement</th>
+                        <th>Bénéfice Potentiel</th>
+                        <th>Marge %</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        currentStatsData.forEach(item => {
+            const statusColor = item.statut === 'CRITIQUE' ? '#e74c3c' : 
+                               item.statut === 'FAIBLE' ? '#f39c12' : '#27ae60';
+            
+            content += `
+                <tr>
+                    <td>${item.article}</td>
+                    <td>${item.type}</td>
+                    <td>${item.quantite}</td>
+                    <td>${formatCurrency(item.prixAchat)}</td>
+                    <td>${formatCurrency(item.prixVente)}</td>
+                    <td>${formatCurrency(item.valeur)}</td>
+                    <td>${formatCurrency(item.investissement)}</td>
+                    <td style="color: ${item.beneficePotentiel >= 0 ? '#27ae60' : '#e74c3c'}">
+                        ${formatCurrency(item.beneficePotentiel)}
+                    </td>
+                    <td>${item.marge.toFixed(2)}%</td>
+                    <td style="color: ${statusColor}">${item.statut}</td>
+                </tr>
+            `;
+        });
+        
+        content += `
+                </tbody>
+            </table>
+        `;
+        
+    } else if (type === 'revenue') {
+        content += `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Transactions</th>
+                        <th>Ventes</th>
+                        <th>Revenus</th>
+                        <th>Coût</th>
+                        <th>Bénéfice</th>
+                        <th>Panier Moyen</th>
+                        <th>Marge %</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        currentStatsData.quotidienne.forEach(item => {
+            content += `
+                <tr>
+                    <td>${item.date}</td>
+                    <td>${item.transactions}</td>
+                    <td>${item.ventes}</td>
+                    <td>${formatCurrency(item.revenus)}</td>
+                    <td>${formatCurrency(item.cout)}</td>
+                    <td style="color: ${item.benefice >= 0 ? '#27ae60' : '#e74c3c'}">
+                        ${formatCurrency(item.benefice)}
+                    </td>
+                    <td>${formatCurrency(item.panierMoyen)}</td>
+                    <td>${item.marge.toFixed(2)}%</td>
+                </tr>
+            `;
+        });
+        
+        content += `
+                </tbody>
+            </table>
+        `;
+    }
+    
+    // Ajouter le résumé
+    content += `
+        <div class="summary">
+            <h3>📈 SYNTHÈSE</h3>
+    `;
+    
+    const stats = getStatsSummary(currentStatsData, type);
+    stats.forEach(stat => {
+        content += `<p>${stat}</p>`;
+    });
+    
+    content += `
+        </div>
+        
+        <div class="footer">
+            <p>TheoVêt - Système de gestion avancé</p>
+            <p>www.theovet.com | contact@theovet.com</p>
+        </div>
+        
+        <div class="no-print" style="text-align: center; margin-top: 30px;">
+            <button onclick="window.print()" style="
+                padding: 10px 20px;
+                background: #3498db;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+            ">
+                🖨️ Imprimer le rapport
+            </button>
+            <button onclick="window.close()" style="
+                padding: 10px 20px;
+                background: #95a5a6;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+                margin-left: 10px;
+            ">
+                ✕ Fermer
+            </button>
+        </div>
+    `;
+    
+    printWindow.document.write(content);
+    printWindow.document.close();
+    printWindow.focus();
+    
+    // Démarrer l'impression après un court délai
+    setTimeout(() => {
+        printWindow.print();
+    }, 500);
+}
+
+// Fonctions utilitaires pour les statistiques
+function getTypeName(type) {
+    const names = {
+        'sales': 'Rapport des ventes',
+        'stock': 'Rapport du stock',
+        'revenue': 'Analyse des revenus'
+    };
+    return names[type] || type;
+}
+
+function getDataCount(data, type) {
+    if (type === 'revenue') {
+        return data.quotidienne ? data.quotidienne.length : 0;
+    }
+    return Array.isArray(data) ? data.length : 0;
+}
+
+function getStatsSummary(data, type) {
+    const stats = [];
+    
+    if (type === 'sales') {
+        const totalVentes = data.reduce((sum, item) => sum + item.total, 0);
+        const totalBenefice = data.reduce((sum, item) => sum + item.benefice, 0);
+        const totalQuantite = data.reduce((sum, item) => sum + item.quantite, 0);
+        const margeMoyenne = totalVentes > 0 ? (totalBenefice / totalVentes * 100) : 0;
+        
+        stats.push(`📊 Total des ventes: ${formatCurrency(totalVentes)}`);
+        stats.push(`💰 Bénéfice total: ${formatCurrency(totalBenefice)}`);
+        stats.push(`📦 Articles vendus: ${totalQuantite}`);
+        stats.push(`📈 Marge moyenne: ${margeMoyenne.toFixed(2)}%`);
+        stats.push(`📋 Nombre de transactions: ${data.length}`);
+        
+    } else if (type === 'stock') {
+        const totalValeur = data.reduce((sum, item) => sum + item.valeur, 0);
+        const totalBeneficePotentiel = data.reduce((sum, item) => sum + item.beneficePotentiel, 0);
+        const totalQuantite = data.reduce((sum, item) => sum + item.quantite, 0);
+        const stockFaible = data.filter(item => item.quantite < 15).length;
+        const stockCritique = data.filter(item => item.quantite < 5).length;
+        
+        stats.push(`📦 Valeur totale du stock: ${formatCurrency(totalValeur)}`);
+        stats.push(`💰 Bénéfice potentiel: ${formatCurrency(totalBeneficePotentiel)}`);
+        stats.push(`🔢 Nombre total d'articles: ${totalQuantite}`);
+        stats.push(`⚠️ Articles en stock faible: ${stockFaible}`);
+        stats.push(`🚨 Articles en stock critique: ${stockCritique}`);
+        
+    } else if (type === 'revenue') {
+        const totalRevenus = data.quotidienne.reduce((sum, item) => sum + item.revenus, 0);
+        const totalBenefice = data.quotidienne.reduce((sum, item) => sum + item.benefice, 0);
+        const totalTransactions = data.quotidienne.reduce((sum, item) => sum + item.transactions, 0);
+        const panierMoyen = totalTransactions > 0 ? totalRevenus / totalTransactions : 0;
+        const margeMoyenne = totalRevenus > 0 ? (totalBenefice / totalRevenus * 100) : 0;
+        
+        stats.push(`📊 Revenus totaux: ${formatCurrency(totalRevenus)}`);
+        stats.push(`💰 Bénéfice total: ${formatCurrency(totalBenefice)}`);
+        stats.push(`🛒 Panier moyen: ${formatCurrency(panierMoyen)}`);
+        stats.push(`📈 Marge moyenne: ${margeMoyenne.toFixed(2)}%`);
+        stats.push(`📋 Nombre de jours: ${data.quotidienne.length}`);
+    }
+    
+    return stats;
+}
+
+// Fonction pour obtenir le statut du stock
+function getStockStatus(quantity) {
+    if (quantity === 0) return 'RUPTURE';
+    if (quantity < 5) return 'CRITIQUE';
+    if (quantity < 15) return 'FAIBLE';
+    if (quantity < 30) return 'MOYEN';
+    return 'BON';
+}
+
+// Exposer les fonctions globales
+window.genererRapportParPeriode = genererRapportParPeriode;
+window.toggleStatsFilters = toggleStatsFilters;
+window.exporterRapportPDF = exporterRapportPDF;
+window.exporterRapportExcel = exporterRapportExcel;
+window.imprimerRapport = imprimerRapport;
+
   </script>
 </body>
-</html> 
+</html>   ´
